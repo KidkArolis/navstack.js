@@ -124,7 +124,7 @@ buster.testCase("navstack", {
         },
 
         "navigation renders only last item in stack": function () {
-            this.stub(Navstack, "renderPage");
+            this.spy(Navstack, "renderPage");
             this.n.navigate("/foo/bar");
 
             assert.calledOnce(Navstack.renderPage);
@@ -132,7 +132,7 @@ buster.testCase("navstack", {
         },
 
         "navigating to root page renders it": function () {
-            this.stub(Navstack, "renderPage");
+            this.spy(Navstack, "renderPage");
             this.n.navigate("/");
             assert.calledOnce(Navstack.renderPage);
             assert.same(Navstack.renderPage.getCall(0).args[0], this.n.rootPage);
@@ -199,7 +199,7 @@ buster.testCase("navstack", {
             },
 
             "pushing one page renders it": function () {
-                this.stub(Navstack, "renderPage");
+                this.spy(Navstack, "renderPage");
                 this.n.pushPage("bar");
 
                 assert.calledOnce(Navstack.renderPage);
@@ -209,7 +209,7 @@ buster.testCase("navstack", {
             "pushing two pages prepares and renders both": function () {
                 this.barPage.prepare = this.stub();
                 this.bazPage.prepare = this.stub();
-                this.stub(Navstack, "renderPage");
+                this.spy(Navstack, "renderPage");
                 this.n.onnavigate = this.stub();
 
                 this.n.pushPage("bar");
@@ -233,7 +233,7 @@ buster.testCase("navstack", {
             },
 
             "popping one page renders previous page": function () {
-                this.stub(Navstack, "renderPage");
+                this.spy(Navstack, "renderPage");
                 this.n.popPage();
                 assert.calledOnce(Navstack.renderPage);
                 assert.same(Navstack.renderPage.getCall(0).args[0], this.n.rootPage);
@@ -247,7 +247,7 @@ buster.testCase("navstack", {
 
             "popping on root page does not render or prepare": function () {
                 this.n.navigate("/");
-                this.stub(Navstack, "renderPage");
+                this.spy(Navstack, "renderPage");
                 this.n.rootPage.prepare = this.stub();
                 this.fooPage.prepare = this.stub();
 
@@ -260,7 +260,7 @@ buster.testCase("navstack", {
 
             "popping twice renders prev and prev prev page": function () {
                 this.n.navigate("/foo/bar/baz");
-                this.stub(Navstack, "renderPage");
+                this.spy(Navstack, "renderPage");
                 this.barPage.prepare = this.stub();
                 this.fooPage.prepare = this.stub();
 
@@ -276,6 +276,61 @@ buster.testCase("navstack", {
                 assert.calledTwice(Navstack.renderPage);
                 assert.same(Navstack.renderPage.getCall(1).args[0], this.fooPage);
             }
+        }
+    },
+
+    "nesting": {
+        setUp: function () {
+            this.barPage = {};
+
+            this.target2 = document.createElement("div");
+            this.n2 = new Navstack();
+            this.n2.target = this.target2;
+            this.n2.rootPage = {};
+            this.n2.rootPage.route = this.stub();
+            this.n2.rootPage.route.returns(this.barPage);
+
+            this.fooPage = {};
+            this.fooPage.route = this.stub();
+            this.fooPage.route.returns(this.n2);
+
+            this.n.rootPage = {};
+            this.n.rootPage.route = this.stub();
+            this.n.rootPage.route.returns(this.fooPage);
+        },
+
+        "should render root page": function () {
+            this.spy(Navstack, "renderPage");
+            this.n.navigate("/foo/nav2");
+            assert.calledOnce(Navstack.renderPage);
+            assert.same(Navstack.renderPage.getCall(0).args[0], this.n2.rootPage);
+        },
+
+        "should prepare pages": function () {
+            this.n.rootPage.prepare = function () {
+                this.root = 123;
+            }
+
+            this.fooPage.prepare = function () {
+                this.foo = 123;
+            }
+
+            this.n2.rootPage.prepare = function () {
+                this.root = 123;
+            }
+
+            this.n.navigate("/foo/nav2");
+            assert.equals(this.n.rootPage.root, 123);
+            assert.equals(this.fooPage.foo, 123);
+            assert.equals(this.n2.rootPage.root, 123);
+        },
+
+        "should render root page in nested navstack target": function () {
+            this.n.navigate("/foo");
+            assert.equals(this.target2.childNodes.length, 0);
+            this.n.navigate("/foo/nav2");
+            assert.equals(this.target2.childNodes.length, 1);
+            assert.same(this.target2.firstChild, this.n2.rootPage.element);
         }
     }
 });

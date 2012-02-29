@@ -1,5 +1,6 @@
 (function (GLOBAL) {
     var Navstack = function () {
+        this._pages = [];
     }
 
     Navstack.renderPage = function (page) {
@@ -16,7 +17,7 @@
         var topPage = navstack._pages[navstack._pages.length - 1];
 
         if (pathSegments.length == 0) {
-            done(null, topPage);
+            done(null, navstack, topPage);
             return;
         }
 
@@ -26,6 +27,11 @@
         if (newPage === undefined) {
             done(); // 404 somehow
             return;
+        }
+
+        if (newPage instanceof Navstack) {
+            navstack = newPage;
+            newPage = navstack.rootPage;
         }
 
         preparePage(newPage, function () {
@@ -58,17 +64,17 @@
 
             this._pages = [this.rootPage];
             preparePage(this.rootPage, function () {
-                navigateIter(self._pathSegments, self, function (err, page) {
-                    self._doRender(page);
+                navigateIter(self._pathSegments, self, function (err, navstack, page) {
+                    navstack._doRender(page);
                 });
             });
         },
 
         pushPage: function (name) {
             var self = this;
-            navigateIter([name], this, function (err, page) {
-                self._pathSegments.push(name);
-                self._doRender(page);
+            navigateIter([name], this, function (err, navstack, page) {
+                navstack._pathSegments.push(name);
+                navstack._doRender(page);
             });
         },
 
@@ -84,6 +90,7 @@
         _doRender: function (page) {
             Navstack.renderPage(page);
             this.onnavigate && this.onnavigate("/" + this._pathSegments.join("/"));
+            this.target.appendChild(page.element);
         }
     }
 
