@@ -90,6 +90,7 @@
         _doRender: function (page) {
             Navstack.renderPage(page);
             this.onnavigate && this.onnavigate("/" + this._pathSegments.join("/"));
+            this.target.innerHTML = "";
             this.target.appendChild(page.element);
         }
     }

@@ -158,6 +158,27 @@ buster.testCase("navstack", {
             assert.calledWithExactly(this.barPage.route, "baz");
         },
 
+        "navigating renders in target element": function () {
+            this.n.navigate("/foo");
+            assert.equals(this.target.childNodes.length, 1);
+            assert.same(this.target.firstChild, this.fooPage.element);
+        },
+
+        "navigating twice renders only current page": function () {
+            this.n.navigate("/foo");
+            this.n.navigate("/foo");
+            assert.equals(this.target.childNodes.length, 1);
+            assert.same(this.target.firstChild, this.fooPage.element);
+
+            this.n.navigate("/foo/bar");
+            assert.equals(this.target.childNodes.length, 1);
+            assert.same(this.target.firstChild, this.barPage.element);
+
+            this.n.navigate("/");
+            assert.equals(this.target.childNodes.length, 1);
+            assert.same(this.target.firstChild, this.n.rootPage.element);
+        },
+
         "sequential steps": {
             setUp: function () {
                 this.n.navigate("/foo");
@@ -225,6 +246,12 @@ buster.testCase("navstack", {
                 assert.equals(this.n.onnavigate.getCall(1).args[0], "/foo/bar/baz");
             },
 
+            "pushing one page renders that page in target": function () {
+                this.n.pushPage("bar");
+                assert.equals(this.target.childNodes.length, 1);
+                assert.same(this.target.firstChild, this.barPage.element);
+            },
+
             "popping one page calls onnavigate": function () {
                 this.n.onnavigate = this.stub();
                 this.n.popPage();
@@ -275,6 +302,18 @@ buster.testCase("navstack", {
                 refute.called(this.fooPage.prepare);
                 assert.calledTwice(Navstack.renderPage);
                 assert.same(Navstack.renderPage.getCall(1).args[0], this.fooPage);
+            },
+
+            "popping renders page in target": function () {
+                this.n.pushPage("bar");
+
+                this.n.popPage();
+                assert.equals(this.target.childNodes.length, 1);
+                assert.same(this.target.firstChild, this.fooPage.element);
+
+                this.n.popPage();
+                assert.equals(this.target.childNodes.length, 1);
+                assert.same(this.target.firstChild, this.n.rootPage.element);
             }
         }
     },
