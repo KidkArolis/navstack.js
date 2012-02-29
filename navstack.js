@@ -20,7 +20,8 @@
             return;
         }
 
-        var newPage = topPage.route(pathSegments.shift());
+        var segment = pathSegments[pathSegments.length - 1];
+        var newPage = topPage.route(segment);
 
         if (newPage === undefined) {
             done(); // 404 somehow
@@ -29,7 +30,7 @@
 
         preparePage(newPage, function () {
             navstack._pages.push(newPage);
-            navigateIter(pathSegments, navstack, done);
+            navigateIter(pathSegments.slice(0, pathSegments.length - 1), navstack, done);
         });
     }
 
@@ -57,7 +58,7 @@
 
             this._pages = [this.rootPage];
             preparePage(this.rootPage, function () {
-                navigateIter(self._pathSegments.slice(0), self, function (err, page) {
+                navigateIter(self._pathSegments, self, function (err, page) {
                     self._doRender(page);
                 });
             });
