@@ -12,7 +12,7 @@
         }
     }
 
-    function navigateIter(segments, page, pages, done) {
+    function navigateIter(pathSegments, page, pages, done) {
         if (page === undefined) {
             done();
             return;
@@ -20,13 +20,13 @@
 
         pages.push(page);
         preparePage(page, function () {
-            if (segments.length == 0) {
+            if (pathSegments.length == 0) {
                 done(null, page);
                 return;
             }
 
-            var segment = segments.shift();
-            navigateIter(segments, page.route(segment), pages, done);
+            var segment = pathSegments.shift();
+            navigateIter(pathSegments, page.route(segment), pages, done);
         });
     }
 
@@ -46,15 +46,15 @@
     Navstack.prototype = {
         navigate: function (path) {
             var self = this;
-            var segments;
+            var pathSegments;
             if (path == "/") {
-                this.segments = [];
+                this.pathSegments = [];
             } else {
-                this.segments = path.slice(1).split("/");
+                this.pathSegments = path.slice(1).split("/");
             }
 
             var pages = [];
-            navigateIter(this.segments.slice(0), this.rootPage, pages, function (err, page) {
+            navigateIter(this.pathSegments.slice(0), this.rootPage, pages, function (err, page) {
                 self._doRender(page);
                 self.pages = pages;
             });
@@ -67,7 +67,7 @@
                 // TODO: 404
             } else {
                 preparePage(page, function () {
-                    self.segments.push(name);
+                    self.pathSegments.push(name);
                     self._doRender(page);
                     self.pages.push(page);
                 });
@@ -77,7 +77,7 @@
         popPage: function () {
             if (this.pages.length === 1) return;
 
-            this.segments.pop();
+            this.pathSegments.pop();
             this.pages.pop();
 
             this._doRender(this.pages[this.pages.length - 1]);
@@ -85,11 +85,7 @@
 
         _doRender: function (page) {
             Navstack.renderPage(page);
-            this.onnavigate && this.onnavigate(this._getPath());
-        },
-
-        _getPath: function () {
-            return "/" + this.segments.join("/");
+            this.onnavigate && this.onnavigate("/" + this.pathSegments.join("/"));
         }
     }
 
