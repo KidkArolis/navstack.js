@@ -31,12 +31,20 @@
 
         if (newPage instanceof Navstack) {
             preparePage(newPage.rootPage, function () {
-                stack.push({path: segment, page: newPage.rootPage, isNavstack: true, navstack: newPage});
+                stack.push({
+                    path: segment,
+                    page: newPage.rootPage,
+                    isNavstack: true,
+                    navstack: newPage
+                });
                 navigateIter(pathSegments.slice(1), newPage, stack, done);
             });
         } else {
             preparePage(newPage, function () {
-                stack.push({path: segment, page: newPage});
+                stack.push({
+                    path: segment,
+                    page: newPage
+                });
                 navigateIter(pathSegments.slice(1), navstack, stack, done);
             });
         }
