@@ -22,7 +22,7 @@
         }
 
         var segment = pathSegments[0];
-        var newPage = topPage.route(segment);
+        var newPage = topPage.page.route(segment);
 
         if (newPage === undefined) {
             done(); // 404 somehow
@@ -32,10 +32,11 @@
         if (newPage instanceof Navstack) {
             navstack = newPage;
             newPage = navstack.rootPage;
+            segment = null;
         }
 
         preparePage(newPage, function () {
-            navstack._pages.push(newPage);
+            navstack._pages.push({path: segment, page: newPage});
             navigateIter(pathSegments.slice(1), navstack, done);
         });
     }
@@ -56,15 +57,16 @@
     Navstack.prototype = {
         navigate: function (path) {
             var self = this;
+            var pathSegments;
             if (path == "/") {
-                this._pathSegments = [];
+                pathSegments = [];
             } else {
-                this._pathSegments = path.slice(1).split("/");
+                pathSegments = path.slice(1).split("/");
             }
 
-            this._pages = [this.rootPage];
+            this._pages = [{path: null, page: this.rootPage}];
             preparePage(this.rootPage, function () {
-                navigateIter(self._pathSegments, self, function (err, navstack, page) {
+                navigateIter(pathSegments, self, function (err, navstack, page) {
                     navstack._doRender(page);
                 });
             });
@@ -73,7 +75,6 @@
         pushPage: function (name) {
             var self = this;
             navigateIter([name], this, function (err, navstack, page) {
-                navstack._pathSegments.push(name);
                 navstack._doRender(page);
             });
         },
@@ -81,17 +82,20 @@
         popPage: function () {
             if (this._pages.length === 1) return;
 
-            this._pathSegments.pop();
             this._pages.pop();
 
             this._doRender(this._pages[this._pages.length - 1]);
         },
 
         _doRender: function (page) {
-            Navstack.renderPage(page);
-            this.onnavigate && this.onnavigate("/" + this._pathSegments.join("/"));
+            Navstack.renderPage(page.page);
+            var path = [];
+            for (var i = 1, ii = this._pages.length; i < ii; i++) {
+                path.push(this._pages[i].path);
+            }
+            this.onnavigate && this.onnavigate("/" + path.join("/"));
             this.target.innerHTML = "";
-            this.target.appendChild(page.element);
+            this.target.appendChild(page.page.element);
         }
     }
 
