@@ -17,7 +17,7 @@
         var topStackItem = stack[stack.length - 1];
 
         if (pathSegments.length == 0) {
-            done(null, navstack, topStackItem);
+            done(null);
             return;
         }
 
@@ -76,37 +76,55 @@
             pathSegments.unshift(null);
             var helperStack = [{page: {route: function () { return self; }}}];
 
-            navigateIter(pathSegments, this, helperStack, function (err, navstack, stack) {
+            navigateIter(pathSegments, this, helperStack, function (err) {
                 self._stack = helperStack.slice(1);
-                self._doRender(stack);
+                self._doRender();
             });
         },
 
         pushPage: function (name) {
             var self = this;
-            navigateIter([name], this, this._stack, function (err, navstack, stack) {
-                self._doRender(stack);
+            navigateIter([name], this, this._stack, function (err) {
+                self._doRender();
             });
         },
 
         popPage: function () {
             if (this._stack.length === 1) return;
             this._stack.pop();
-            this._doRender(this._stack[this._stack.length - 1]);
+            this._doRender();
         },
 
-        _doRender: function (stackItem) {
-            var topStack;
-            for (var i = 0, ii = this._stack.length; i < ii; i++) {
+        _doRender: function () {
+            var stacks = [];
+            var currStack = [this._stack[0]];
+
+            for (var i = 1, ii = this._stack.length; i < ii; i++) {
                 var s = this._stack[i];
                 if (s.isNavstack) {
-                    topStack = s.navstack;
+                    stacks.push(currStack);
+                    currStack = [s];
+                } else {
+                    currStack.push(s);
                 }
             }
+            if (stacks[stacks.length - 1] !== currStack) {
+                stacks.push(currStack);
+            }
 
-            Navstack.renderPage(stackItem.page);
-            topStack.target.innerHTML = "";
-            topStack.target.appendChild(stackItem.page.element);
+            for (var i = 0, ii = stacks.length; i < ii; i++) {
+                var stack = stacks[i];
+                var navstack = stack[0].navstack;
+                var page;
+                if (stack.length == 1) {
+                    page = navstack.rootPage;
+                } else {
+                    page = stack[stack.length - 1].page;
+                }
+
+                Navstack.renderPage(page);
+                renderInTarget(navstack.target, page.element);
+            }
 
             var path = [];
             for (var i = 1, ii = this._stack.length; i < ii; i++) {
@@ -114,6 +132,13 @@
             }
             this.onnavigate && this.onnavigate("/" + path.join("/"));
         }
+    }
+
+    function renderInTarget(target, element) {
+        if (target.firstChild === element) return;
+
+        target.innerHTML = "";
+        target.appendChild(element);
     }
 
     GLOBAL.Navstack = Navstack

@@ -341,8 +341,8 @@ buster.testCase("navstack", {
         "should render root page": function () {
             this.spy(Navstack, "renderPage");
             this.n.navigate("/foo/nav2");
-            assert.calledOnce(Navstack.renderPage);
-            assert.same(Navstack.renderPage.getCall(0).args[0], this.n2.rootPage);
+            assert.called(Navstack.renderPage);
+            assert.calledWithExactly(Navstack.renderPage, this.n2.rootPage);
         },
 
         "should prepare pages": function () {
@@ -425,6 +425,21 @@ buster.testCase("navstack", {
             this.n.popPage();
             assert.calledOnce(this.n.onnavigate);
             assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
+        },
+
+        "navigating should update all target elements": function () {
+            var target3 = document.createElement("div");
+            var n3 = new Navstack();
+            n3.target = target3;
+            n3.rootPage = {};
+
+            this.barPage.route = this.stub();
+            this.barPage.route.returns(n3);
+
+            this.n.navigate("/foo/nav2/bar/nav3");
+            assert.same(this.target.firstChild, this.fooPage.element);
+            assert.same(this.target2.firstChild, this.barPage.element);
+            assert.same(target3.firstChild, n3.rootPage.element);
         }
     }
 });
