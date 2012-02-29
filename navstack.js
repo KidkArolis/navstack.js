@@ -12,21 +12,24 @@
         }
     }
 
-    function navigateIter(pathSegments, page, pages, done) {
-        if (page === undefined) {
-            done();
+    function navigateIter(pathSegments, navstack, done) {
+        var topPage = navstack._pages[navstack._pages.length - 1];
+
+        if (pathSegments.length == 0) {
+            done(null, topPage);
             return;
         }
 
-        pages.push(page);
-        preparePage(page, function () {
-            if (pathSegments.length == 0) {
-                done(null, page);
-                return;
-            }
+        var newPage = topPage.route(pathSegments.shift());
 
-            var segment = pathSegments.shift();
-            navigateIter(pathSegments, page.route(segment), pages, done);
+        if (newPage === undefined) {
+            done(); // 404 somehow
+            return;
+        }
+
+        preparePage(newPage, function () {
+            navstack._pages.push(newPage);
+            navigateIter(pathSegments, navstack, done);
         });
     }
 
@@ -52,25 +55,20 @@
                 this._pathSegments = path.slice(1).split("/");
             }
 
-            var pages = [];
-            navigateIter(this._pathSegments.slice(0), this.rootPage, pages, function (err, page) {
-                self._doRender(page);
-                self._pages = pages;
+            this._pages = [this.rootPage];
+            preparePage(this.rootPage, function () {
+                navigateIter(self._pathSegments.slice(0), self, function (err, page) {
+                    self._doRender(page);
+                });
             });
         },
 
         pushPage: function (name) {
             var self = this;
-            var page = this._pages[this._pages.length - 1].route(name);
-            if (page === undefined) {
-                // TODO: 404
-            } else {
-                preparePage(page, function () {
-                    self._pathSegments.push(name);
-                    self._doRender(page);
-                    self._pages.push(page);
-                });
-            }
+            navigateIter([name], this, function (err, page) {
+                self._pathSegments.push(name);
+                self._doRender(page);
+            });
         },
 
         popPage: function () {
