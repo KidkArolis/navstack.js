@@ -65,12 +65,13 @@
                 pathSegments = path.slice(1).split("/");
             }
 
-            this._stack = [{path: null, page: this.rootPage}];
-            preparePage(this.rootPage, function () {
-                navigateIter(pathSegments, self, self._stack, function (err, navstack, page) {
-                    navstack._doRender(page);
-                    self._doOnNavigate();
-                });
+            pathSegments.unshift(null);
+            var helperStack = [{page: {route: function () { return self; }}}];
+
+            navigateIter(pathSegments, this, helperStack, function (err, navstack, page) {
+                self._stack = helperStack.slice(1);
+                navstack._doRender(page);
+                self._doOnNavigate();
             });
         },
 
