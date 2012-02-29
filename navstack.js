@@ -31,7 +31,7 @@
 
         if (newPage instanceof Navstack) {
             preparePage(newPage.rootPage, function () {
-                stack.push({path: segment, page: newPage.rootPage});
+                stack.push({path: segment, page: newPage.rootPage, isNavstack: true, navstack: newPage});
                 navigateIter(pathSegments.slice(1), newPage, stack, done);
             });
         } else {
@@ -70,40 +70,40 @@
 
             navigateIter(pathSegments, this, helperStack, function (err, navstack, page) {
                 self._stack = helperStack.slice(1);
-                navstack._doRender(page);
-                self._doOnNavigate();
+                self._doRender(page);
             });
         },
 
         pushPage: function (name) {
             var self = this;
             navigateIter([name], this, this._stack, function (err, navstack, page) {
-                navstack._doRender(page);
-                self._doOnNavigate();
+                self._doRender(page);
             });
         },
 
         popPage: function () {
             if (this._stack.length === 1) return;
-
             this._stack.pop();
-
             this._doRender(this._stack[this._stack.length - 1]);
-            this._doOnNavigate();
         },
 
         _doRender: function (stackItem) {
-            Navstack.renderPage(stackItem.page);
-            this.target.innerHTML = "";
-            this.target.appendChild(stackItem.page.element);
-        },
+            var topStack;
+            for (var i = 0, ii = this._stack.length; i < ii; i++) {
+                var s = this._stack[i];
+                if (s.isNavstack) {
+                    topStack = s.navstack;
+                }
+            }
 
-        _doOnNavigate: function () {
+            Navstack.renderPage(stackItem.page);
+            topStack.target.innerHTML = "";
+            topStack.target.appendChild(stackItem.page.element);
+
             var path = [];
             for (var i = 1, ii = this._stack.length; i < ii; i++) {
                 path.push(this._stack[i].path);
             }
-
             this.onnavigate && this.onnavigate("/" + path.join("/"));
         }
     }

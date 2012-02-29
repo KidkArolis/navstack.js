@@ -377,6 +377,26 @@ buster.testCase("navstack", {
             this.n.navigate("/foo/nav2");
             assert.calledOnce(this.n.onnavigate);
             assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
+        },
+
+        "pushing to nested navstack should render": function () {
+            this.n.navigate("/foo");
+            this.n.pushPage("nav2");
+            assert.same(this.target2.firstChild, this.n2.rootPage.element);
+        },
+
+        "pushing to nested navstack should call onnavigate": function () {
+            this.n.navigate("/foo");
+            this.n.onnavigate = this.stub();
+            this.n.pushPage("nav2");
+            assert.calledOnce(this.n.onnavigate);
+            assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
+        },
+
+        "pushing to nested page should render": function () {
+            this.n.navigate("/foo/nav2");
+            this.n.pushPage("bar");
+            assert.same(this.target2.firstChild, this.barPage.element);
         }
     }
 });
