@@ -47,44 +47,44 @@
         navigate: function (path) {
             var self = this;
             if (path == "/") {
-                this.pathSegments = [];
+                this._pathSegments = [];
             } else {
-                this.pathSegments = path.slice(1).split("/");
+                this._pathSegments = path.slice(1).split("/");
             }
 
             var pages = [];
-            navigateIter(this.pathSegments.slice(0), this.rootPage, pages, function (err, page) {
+            navigateIter(this._pathSegments.slice(0), this.rootPage, pages, function (err, page) {
                 self._doRender(page);
-                self.pages = pages;
+                self._pages = pages;
             });
         },
 
         pushPage: function (name) {
             var self = this;
-            var page = this.pages[this.pages.length - 1].route(name);
+            var page = this._pages[this._pages.length - 1].route(name);
             if (page === undefined) {
                 // TODO: 404
             } else {
                 preparePage(page, function () {
-                    self.pathSegments.push(name);
+                    self._pathSegments.push(name);
                     self._doRender(page);
-                    self.pages.push(page);
+                    self._pages.push(page);
                 });
             }
         },
 
         popPage: function () {
-            if (this.pages.length === 1) return;
+            if (this._pages.length === 1) return;
 
-            this.pathSegments.pop();
-            this.pages.pop();
+            this._pathSegments.pop();
+            this._pages.pop();
 
-            this._doRender(this.pages[this.pages.length - 1]);
+            this._doRender(this._pages[this._pages.length - 1]);
         },
 
         _doRender: function (page) {
             Navstack.renderPage(page);
-            this.onnavigate && this.onnavigate("/" + this.pathSegments.join("/"));
+            this.onnavigate && this.onnavigate("/" + this._pathSegments.join("/"));
         }
     }
 
