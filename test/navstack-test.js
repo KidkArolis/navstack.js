@@ -151,6 +151,13 @@ buster.testCase("navstack", {
             assert.calledWithExactly(this.n.onnavigate, "/");
         },
 
+        "navigating routes with segment name": function () {
+            this.n.navigate("/foo/bar/baz");
+            assert.calledWithExactly(this.n.rootPage.route, "foo");
+            assert.calledWithExactly(this.fooPage.route, "bar");
+            assert.calledWithExactly(this.barPage.route, "baz");
+        },
+
         "sequential steps": {
             setUp: function () {
                 this.n.navigate("/foo");
@@ -181,6 +188,14 @@ buster.testCase("navstack", {
                     assert.equals(self.barPage.bar, "yup");
                 });
                 this.n.pushPage("bar");
+            },
+
+            "pushing one page routes current page with that path name": function () {
+                this.n.pushPage("bar");
+                assert.calledWithExactly(this.fooPage.route, "bar");
+
+                this.n.pushPage("baz");
+                assert.calledWithExactly(this.barPage.route, "baz");
             },
 
             "pushing one page renders it": function () {

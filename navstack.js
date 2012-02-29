@@ -20,7 +20,7 @@
             return;
         }
 
-        var segment = pathSegments[pathSegments.length - 1];
+        var segment = pathSegments[0];
         var newPage = topPage.route(segment);
 
         if (newPage === undefined) {
@@ -30,7 +30,7 @@
 
         preparePage(newPage, function () {
             navstack._pages.push(newPage);
-            navigateIter(pathSegments.slice(0, pathSegments.length - 1), navstack, done);
+            navigateIter(pathSegments.slice(1), navstack, done);
         });
     }
 
