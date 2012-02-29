@@ -376,6 +376,7 @@ buster.testCase("navstack", {
             this.n.onnavigate = this.stub();
             this.n.navigate("/foo/nav2");
             assert.calledOnce(this.n.onnavigate);
+            assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
         }
     }
 });
