@@ -46,7 +46,6 @@
     Navstack.prototype = {
         navigate: function (path) {
             var self = this;
-            var pathSegments;
             if (path == "/") {
                 this.pathSegments = [];
             } else {
