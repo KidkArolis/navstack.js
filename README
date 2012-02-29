@@ -1,0 +1,6 @@
+navstack.js
+===========
+
+Nawstack is an implementation of a pattern that enables for generic URL generation and page rebuilds from URL for single page webapps.
+
+The gist of the pattern is that loading pages from a URL is identical to loading pages via user interactions. The net result is that by accepting the restrictions imposed by this pattern, you don't need to write code for rebuilding your page from scratch via a URL.
