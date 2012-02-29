@@ -68,16 +68,16 @@
             pathSegments.unshift(null);
             var helperStack = [{page: {route: function () { return self; }}}];
 
-            navigateIter(pathSegments, this, helperStack, function (err, navstack, page) {
+            navigateIter(pathSegments, this, helperStack, function (err, navstack, stack) {
                 self._stack = helperStack.slice(1);
-                self._doRender(page);
+                self._doRender(stack);
             });
         },
 
         pushPage: function (name) {
             var self = this;
-            navigateIter([name], this, this._stack, function (err, navstack, page) {
-                self._doRender(page);
+            navigateIter([name], this, this._stack, function (err, navstack, stack) {
+                self._doRender(stack);
             });
         },
 
