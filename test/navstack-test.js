@@ -370,6 +370,12 @@ buster.testCase("navstack", {
             this.n.navigate("/foo/nav2");
             assert.equals(this.target2.childNodes.length, 1);
             assert.same(this.target2.firstChild, this.n2.rootPage.element);
+        },
+
+        "should call onnavigate": function () {
+            this.n.onnavigate = this.stub();
+            this.n.navigate("/foo/nav2");
+            assert.calledOnce(this.n.onnavigate);
         }
     }
 });

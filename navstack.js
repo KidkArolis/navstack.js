@@ -68,6 +68,7 @@
             preparePage(this.rootPage, function () {
                 navigateIter(pathSegments, self, function (err, navstack, page) {
                     navstack._doRender(page);
+                    self._doOnNavigate();
                 });
             });
         },
@@ -76,6 +77,7 @@
             var self = this;
             navigateIter([name], this, function (err, navstack, page) {
                 navstack._doRender(page);
+                self._doOnNavigate();
             });
         },
 
@@ -85,17 +87,22 @@
             this._pages.pop();
 
             this._doRender(this._pages[this._pages.length - 1]);
+            this._doOnNavigate();
         },
 
         _doRender: function (page) {
             Navstack.renderPage(page.page);
+            this.target.innerHTML = "";
+            this.target.appendChild(page.page.element);
+        },
+
+        _doOnNavigate: function () {
             var path = [];
             for (var i = 1, ii = this._pages.length; i < ii; i++) {
                 path.push(this._pages[i].path);
             }
+
             this.onnavigate && this.onnavigate("/" + path.join("/"));
-            this.target.innerHTML = "";
-            this.target.appendChild(page.page.element);
         }
     }
 
