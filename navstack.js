@@ -65,6 +65,26 @@
         }
     }
 
+    function groupStackByNavstacks(stack) {
+        var result = [];
+        var currStack = [stack[0]];
+
+        for (var i = 1, ii = stack.length; i < ii; i++) {
+            var s = stack[i];
+            if (s.isNavstack) {
+                result.push(currStack);
+                currStack = [s];
+            } else {
+                currStack.push(s);
+            }
+        }
+        if (result[result.length - 1] !== currStack) {
+            result.push(currStack);
+        }
+
+        return result;
+    }
+
     Navstack.prototype = {
         navigate: function (path) {
             var self = this;
@@ -98,22 +118,7 @@
         },
 
         _doRender: function () {
-            var stacks = [];
-            var currStack = [this._stack[0]];
-
-            for (var i = 1, ii = this._stack.length; i < ii; i++) {
-                var s = this._stack[i];
-                if (s.isNavstack) {
-                    stacks.push(currStack);
-                    currStack = [s];
-                } else {
-                    currStack.push(s);
-                }
-            }
-            if (stacks[stacks.length - 1] !== currStack) {
-                stacks.push(currStack);
-            }
-
+            var stacks = groupStackByNavstacks(this._stack);
             for (var i = 0, ii = stacks.length; i < ii; i++) {
                 var stack = stacks[i];
                 var navstack = stack[0].navstack;
