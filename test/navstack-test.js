@@ -181,7 +181,7 @@ buster.testCase("navstack", {
 
         "navigating to abstract root page prepares it": function () {
             var self = this;
-            this.n.rootPage.isAbstract = true;
+            this.n.rootPage.abstractPage = this.stub();
             this.n.rootPage.prepare = function () { this.root = 123; };
 
             this.n.navigate("/");
@@ -189,14 +189,14 @@ buster.testCase("navstack", {
         },
 
         "navigating to abstract root page does not render it": function () {
-            this.n.rootPage.isAbstract = true;
+            this.n.rootPage.abstractPage = this.stub();
             this.spy(Navstack, "renderPage");
             this.n.navigate("/");
             refute.called(Navstack.renderPage);
         },
 
         "navigating to abstract root page calls onnavigate": function () {
-            this.n.rootPage.isAbstract = true;
+            this.n.rootPage.abstractPage = this.stub();
             this.n.onnavigate = this.stub();
             this.n.navigate("/");
             assert.calledOnce(this.n.onnavigate);
@@ -204,10 +204,21 @@ buster.testCase("navstack", {
         },
 
         "navigating to abstract root page loads it": function () {
-            this.n.rootPage.isAbstract = true;
+            this.n.rootPage.abstractPage = this.stub();
             this.n.rootPage.load = this.stub();
             this.n.navigate("/");
-            assert.calledOnce(this.n.rootPage.load);
+            assert.calledOnce(this.n.rootPage.abstractPage);
+        },
+
+        "navigating to abstract root page that performs navigatin": function () {
+            var self = this;
+            this.n.onnavigate = this.stub();
+            this.n.rootPage.abstractPage = function () { self.n.pushPage("foo") };
+            this.n.navigate("/");
+
+            assert.calledTwice(this.n.onnavigate);
+            assert.equals(this.n.onnavigate.getCall(0).args[0], "/");
+            assert.equals(this.n.onnavigate.getCall(1).args[0], "/foo");
         },
 
         "sequential steps": {
@@ -473,34 +484,18 @@ buster.testCase("navstack", {
             assert.same(target3.firstChild, n3.rootPage.element);
         },
 
-        "navigating prepares and loads all pages in order": function () {
-            var i = 0;
-            function prepareCallTest() {
-                this.didPrepare = ++i;
-            }
-            function loadCallTest() {
-                this.didLoad = ++i;
-            }
+        "navigating to nested abstract root page": function () {
+            this.n2.rootPage.abstractPage = this.stub();
+            this.n.navigate("/foo/nav2");
+            assert.calledOnce(this.n2.rootPage.abstractPage);
+        },
 
-            this.n.rootPage.prepare = prepareCallTest;
-            this.n.rootPage.load = loadCallTest;
-            this.fooPage.prepare = prepareCallTest;
-            this.fooPage.load = loadCallTest;
-            this.n2.rootPage.prepare = prepareCallTest;
-            this.n2.rootPage.load = loadCallTest;
-            this.barPage.prepare = prepareCallTest;
-            this.barPage.load = loadCallTest;
-
-            this.n.navigate("/foo/nav2/bar");
-
-            assert.equals(this.n.rootPage.didPrepare, 1);
-            assert.equals(this.n.rootPage.didLoad, 2);
-            assert.equals(this.fooPage.didPrepare, 3);
-            assert.equals(this.fooPage.didLoad, 4);
-            assert.equals(this.n2.rootPage.didPrepare, 5);
-            assert.equals(this.n2.rootPage.didLoad, 6);
-            assert.equals(this.barPage.didPrepare, 7);
-            assert.equals(this.barPage.didLoad, 8);
+        "navigating to nested abstract navstack with abstract root navstack": function () {
+            this.n.rootPage.abstractPage = this.stub();
+            this.n2.rootPage.abstractPage = this.stub();
+            this.n.navigate("/foo/nav2");
+            refute.called(this.n.rootPage.abstractPage);
+            assert.calledOnce(this.n2.rootPage.abstractPage);
         }
     }
 });

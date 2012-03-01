@@ -31,7 +31,6 @@
 
         if (newPage instanceof Navstack) {
             preparePage(newPage.rootPage, function () {
-                newPage.rootPage.load && newPage.rootPage.load();
                 stack.push({
                     path: segment,
                     page: newPage.rootPage,
@@ -42,7 +41,6 @@
             });
         } else {
             preparePage(newPage, function () {
-                newPage.load && newPage.load();
                 stack.push({
                     path: segment,
                     page: newPage
@@ -129,7 +127,7 @@
                     page = stack[stack.length - 1].page;
                 }
 
-                if (!page.isAbstract) {
+                if (!("abstractPage" in page)) {
                     Navstack.renderPage(page);
                     renderInTarget(navstack.target, page.element);
                 }
@@ -140,6 +138,11 @@
                 path.push(this._stack[i].path);
             }
             this.onnavigate && this.onnavigate("/" + path.join("/"));
+
+            var lastStackItem = this._stack[this._stack.length -1];
+            if (lastStackItem.page.abstractPage) {
+                lastStackItem.page.abstractPage();
+            }
         }
     }
 
