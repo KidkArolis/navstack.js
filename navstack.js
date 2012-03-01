@@ -122,8 +122,12 @@
                     page = stack[stack.length - 1].page;
                 }
 
-                Navstack.renderPage(page);
-                renderInTarget(navstack.target, page.element);
+                page.load && page.load();
+
+                if (!page.isAbstract) {
+                    Navstack.renderPage(page);
+                    renderInTarget(navstack.target, page.element);
+                }
             }
 
             var path = [];

@@ -179,6 +179,37 @@ buster.testCase("navstack", {
             assert.same(this.target.firstChild, this.n.rootPage.element);
         },
 
+        "navigating to abstract root page prepares it": function () {
+            var self = this;
+            this.n.rootPage.isAbstract = true;
+            this.n.rootPage.prepare = function () { this.root = 123; };
+
+            this.n.navigate("/");
+            assert.equals(this.n.rootPage.root, 123);
+        },
+
+        "navigating to abstract root page does not render it": function () {
+            this.n.rootPage.isAbstract = true;
+            this.spy(Navstack, "renderPage");
+            this.n.navigate("/");
+            refute.called(Navstack.renderPage);
+        },
+
+        "navigating to abstract root page calls onnavigate": function () {
+            this.n.rootPage.isAbstract = true;
+            this.n.onnavigate = this.stub();
+            this.n.navigate("/");
+            assert.calledOnce(this.n.onnavigate);
+            assert.calledWithExactly(this.n.onnavigate, "/");
+        },
+
+        "navigating to abstract root page loads it": function () {
+            this.n.rootPage.isAbstract = true;
+            this.n.rootPage.load = this.stub();
+            this.n.navigate("/");
+            assert.calledOnce(this.n.rootPage.load);
+        },
+
         "sequential steps": {
             setUp: function () {
                 this.n.navigate("/foo");
