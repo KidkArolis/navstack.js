@@ -471,6 +471,36 @@ buster.testCase("navstack", {
             assert.same(this.target.firstChild, this.fooPage.element);
             assert.same(this.target2.firstChild, this.barPage.element);
             assert.same(target3.firstChild, n3.rootPage.element);
+        },
+
+        "navigating prepares and loads all pages in order": function () {
+            var i = 0;
+            function prepareCallTest() {
+                this.didPrepare = ++i;
+            }
+            function loadCallTest() {
+                this.didLoad = ++i;
+            }
+
+            this.n.rootPage.prepare = prepareCallTest;
+            this.n.rootPage.load = loadCallTest;
+            this.fooPage.prepare = prepareCallTest;
+            this.fooPage.load = loadCallTest;
+            this.n2.rootPage.prepare = prepareCallTest;
+            this.n2.rootPage.load = loadCallTest;
+            this.barPage.prepare = prepareCallTest;
+            this.barPage.load = loadCallTest;
+
+            this.n.navigate("/foo/nav2/bar");
+
+            assert.equals(this.n.rootPage.didPrepare, 1);
+            assert.equals(this.n.rootPage.didLoad, 2);
+            assert.equals(this.fooPage.didPrepare, 3);
+            assert.equals(this.fooPage.didLoad, 4);
+            assert.equals(this.n2.rootPage.didPrepare, 5);
+            assert.equals(this.n2.rootPage.didLoad, 6);
+            assert.equals(this.barPage.didPrepare, 7);
+            assert.equals(this.barPage.didLoad, 8);
         }
     }
 });

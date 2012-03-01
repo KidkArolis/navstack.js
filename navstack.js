@@ -31,6 +31,7 @@
 
         if (newPage instanceof Navstack) {
             preparePage(newPage.rootPage, function () {
+                newPage.rootPage.load && newPage.rootPage.load();
                 stack.push({
                     path: segment,
                     page: newPage.rootPage,
@@ -41,6 +42,7 @@
             });
         } else {
             preparePage(newPage, function () {
+                newPage.load && newPage.load();
                 stack.push({
                     path: segment,
                     page: newPage
@@ -121,8 +123,6 @@
                 } else {
                     page = stack[stack.length - 1].page;
                 }
-
-                page.load && page.load();
 
                 if (!page.isAbstract) {
                     Navstack.renderPage(page);
