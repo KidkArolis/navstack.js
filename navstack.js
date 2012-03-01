@@ -6,7 +6,7 @@
     Navstack.renderPage = function (page) {
         if (!("element" in page)) {
             if ("createElement" in page) {
-                page.createElement();
+                page.element = page.createElement();
             } else {
                 page.element = document.createElement("div");
             }

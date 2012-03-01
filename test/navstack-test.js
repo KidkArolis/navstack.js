@@ -17,7 +17,7 @@ buster.testCase("navstack", {
             var actualElement = document.createElement("div");
             var c = {
                 createElement: function () {
-                    this.element = actualElement;
+                    return actualElement;
                 }
             };
 
@@ -38,7 +38,7 @@ buster.testCase("navstack", {
             var actualElement = document.createElement("div");
             var c = {
                 createElement: this.spy(function () {
-                    this.element = actualElement;
+                    return actualElement;
                 })
             };
             Navstack.renderPage(c);
