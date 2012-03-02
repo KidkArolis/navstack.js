@@ -10,6 +10,8 @@
             } else {
                 page.element = document.createElement("div");
             }
+
+            page.pageDidLoad && page.pageDidLoad();
         }
     }
 

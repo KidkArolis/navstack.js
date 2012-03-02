@@ -45,6 +45,30 @@ buster.testCase("navstack", {
             Navstack.renderPage(c);
             assert.calledOnce(c.createElement);
             assert.same(c.element, actualElement);
+        },
+
+        "calls pageDidLoad after createElement": function () {
+            var i = 0;
+            var c = {};
+            c.createElement = function () {
+                this.foo = 123;
+                return document.createElement("div");
+            }
+            c.pageDidLoad = function () {
+                ++this.foo;
+            }
+
+            Navstack.renderPage(c);
+            assert.equals(c.foo, 124);
+        },
+
+        "does not call pageDidLoad when already rendered": function () {
+            var c = {};
+            Navstack.renderPage(c);
+
+            c.pageDidLoad = this.stub();
+            Navstack.renderPage(c);
+            refute.called(c.pageDidLoad);
         }
     },
 
