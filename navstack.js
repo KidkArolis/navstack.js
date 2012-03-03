@@ -1,58 +1,92 @@
 (function (GLOBAL) {
-    var Navstack = function () {
-        this._stack = [];
+    var Navstack = function () {}
+
+    Navstack.getPageElement = function (page) {
+        return page.element || (page.element = page.createElement());
     }
 
-    Navstack.renderPage = function (page) {
-        if (!("element" in page)) {
-            if ("createElement" in page) {
-                page.element = page.createElement();
+    Navstack.prototype = {
+        navigate: function (path) {
+            var self = this;
+            path = path.slice(1);
+            var pathSegments;
+            if (path.length == 0) {
+                pathSegments = [];
             } else {
-                page.element = document.createElement("div");
+                pathSegments = path.split("/");
             }
 
-            page.pageDidLoad && page.pageDidLoad();
+            pathSegments.unshift(null);
+            var stack  = [{page: {route: function () { return self.rootPage; }}}];
+
+            navigateIter(pathSegments, stack, function (stack) {
+                self._stack = stack.slice(1);
+                self._renderStack();
+                self._didNavigate();
+            });
+        },
+
+        pushPathSegment: function (pathSegment) {
+            var self = this;
+            navigateIter([pathSegment], this._stack, function (stack) {
+                self._stack = stack;
+                self._renderStack();
+                self._didNavigate();
+            });
+        },
+
+        popPage: function () {
+            if (this._stack.length === 1) return;
+            this._stack.pop();
+            this._renderStack();
+            this._didNavigate();
+        },
+
+        _renderStack: function () {
+            var pageGroups = pagesGroupedByTargetForStack(this._stack);
+            for (var i = 0, ii = pageGroups.length; i < ii; i++) {
+                var pageGroup = pageGroups[i];
+
+                var targetPage = pageGroup[0];
+                var target = targetPage.target;
+                var sourcePage = pageGroup[pageGroup.length - 1];
+                if (pageIsAbstract(sourcePage)) continue;
+
+                var element = Navstack.getPageElement(sourcePage);
+                if (target.firstChild === element) continue;
+                target.innerHTML = "";
+                target.appendChild(element);
+            }
+        },
+
+        _didNavigate: function () {
+            var pathSegments = [];
+            for (var i = 1, ii = this._stack.length; i < ii; i++) {
+                pathSegments.push(this._stack[i].pathSegment);
+            }
+            this.onNavigate && this.onNavigate("/" + pathSegments.join("/"));
+
+            var topStackItem = this._stack[this._stack.length - 1];
+            var page = topStackItem.page;
+            page.onNavigatedTo && page.onNavigatedTo();
         }
-    }
+    };
 
-    function navigateIter(pathSegments, navstack, stack, done) {
-        var topStackItem = stack[stack.length - 1];
-
+    function navigateIter(pathSegments, stack, done) {
         if (pathSegments.length == 0) {
-            done(null);
-            return;
+            return done(stack);
         }
 
-        var segment = pathSegments[0];
-        var newPage = topStackItem.page.route(segment);
-
-        if (newPage === undefined) {
-            done(); // 404 somehow
-            return;
-        }
-
-        if (newPage instanceof Navstack) {
-            preparePage(newPage.rootPage, function () {
-                stack.push({
-                    path: segment,
-                    page: newPage.rootPage,
-                    isNavstack: true,
-                    navstack: newPage
-                });
-                navigateIter(pathSegments.slice(1), newPage, stack, done);
-            });
-        } else {
-            preparePage(newPage, function () {
-                stack.push({
-                    path: segment,
-                    page: newPage
-                });
-                navigateIter(pathSegments.slice(1), navstack, stack, done);
-            });
-        }
+        var topStackItem = stack[stack.length - 1];
+        var pathSegment = pathSegments[0];
+        var newPage = topStackItem.page.route(pathSegment);
+        var newStackItem = {page: newPage, pathSegment: pathSegment};
+        loadPage(newPage, function () {
+            navigateIter(pathSegments.slice(1), stack.concat(newStackItem), done);
+        });
     }
 
-    function preparePage(page, done) {
+    function loadPage(page, done) {
         if ("prepare" in page) {
             if (page.prepare.length == 0) {
                 page.prepare();
@@ -65,17 +99,17 @@
         }
     }
 
-    function groupStackByNavstacks(stack) {
+    function pagesGroupedByTargetForStack(stack) {
         var result = [];
-        var currStack = [stack[0]];
+        var currStack = [stack[0].page];
 
         for (var i = 1, ii = stack.length; i < ii; i++) {
-            var s = stack[i];
-            if (s.isNavstack) {
+            var page = stack[i].page;
+            if (page.target) {
                 result.push(currStack);
-                currStack = [s];
+                currStack = [page];
             } else {
-                currStack.push(s);
+                currStack.push(page);
             }
         }
         if (result[result.length - 1] !== currStack) {
@@ -85,74 +119,8 @@
         return result;
     }
 
-    Navstack.prototype = {
-        navigate: function (path) {
-            var self = this;
-            var pathSegments;
-            if (path == "/") {
-                pathSegments = [];
-            } else {
-                pathSegments = path.slice(1).split("/");
-            }
-
-            pathSegments.unshift(null);
-            var helperStack = [{page: {route: function () { return self; }}}];
-
-            navigateIter(pathSegments, this, helperStack, function (err) {
-                self._stack = helperStack.slice(1);
-                self._doRender();
-            });
-        },
-
-        pushPage: function (name) {
-            var self = this;
-            navigateIter([name], this, this._stack, function (err) {
-                self._doRender();
-            });
-        },
-
-        popPage: function () {
-            if (this._stack.length === 1) return;
-            this._stack.pop();
-            this._doRender();
-        },
-
-        _doRender: function () {
-            var stacks = groupStackByNavstacks(this._stack);
-            for (var i = 0, ii = stacks.length; i < ii; i++) {
-                var stack = stacks[i];
-                var navstack = stack[0].navstack;
-                var page;
-                if (stack.length == 1) {
-                    page = navstack.rootPage;
-                } else {
-                    page = stack[stack.length - 1].page;
-                }
-
-                if (!("abstractPage" in page)) {
-                    Navstack.renderPage(page);
-                    renderInTarget(navstack.target, page.element);
-                }
-            }
-
-            var path = [];
-            for (var i = 1, ii = this._stack.length; i < ii; i++) {
-                path.push(this._stack[i].path);
-            }
-            this.onnavigate && this.onnavigate("/" + path.join("/"));
-
-            var lastStackItem = this._stack[this._stack.length -1];
-            if (lastStackItem.page.abstractPage) {
-                lastStackItem.page.abstractPage();
-            }
-        }
-    }
-
-    function renderInTarget(target, element) {
-        if (target.firstChild === element) return;
-
-        target.innerHTML = "";
-        target.appendChild(element);
+    function pageIsAbstract(page) {
+        return !("createElement" in page);
     }
 
     GLOBAL.Navstack = Navstack

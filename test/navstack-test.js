@@ -2,524 +2,314 @@ buster.testCase("navstack", {
     setUp: function () {
         this.target = document.createElement("div");
         this.n = new Navstack();
-        this.n.target = this.target;
+        this.n.onNavigate = this.stub();
+
+        this.defaultCreateElement = sinon.spy.create(function () {
+            return document.createElement("div");
+        });
     },
 
-    "page rendering lifecycle": {
-        "creates default element if createElement is not defined": function () {
-            var c = {};
-            Navstack.renderPage(c);
-            assert.defined(c.element);
-            assert(c.element instanceof Element);
+    "navigation": {
+        setUp: function () {
+            this.n._loadPage = function (page) {
+                page.prepare && page.prepare();
+            };
         },
 
-        "calls createElement if defined": function () {
+        "to plain root page": function () {
             var actualElement = document.createElement("div");
-            var c = {
+            this.n.rootPage = {
                 createElement: function () {
                     return actualElement;
-                }
+                },
+                target: this.target,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy()
             };
 
-            Navstack.renderPage(c);
-            assert.same(c.element, actualElement);
+            this.n.navigate("/");
+
+            assertNavigatedTo(this.n, "/");
+            assert.pageNavigatedTo(this.n.rootPage);
+            assert.pagePrepared(this.n.rootPage);
+            assertOnlyChild(this.target, actualElement);
+            assert.pageHasGeneratedElement(this.n.rootPage);
         },
 
-        "re-renders when already rendered": function () {
-            var predefinedElement = document.createElement("div");
-            var c = {
-                element: predefinedElement
-            }
-            Navstack.renderPage(c);
-            assert.same(c.element, predefinedElement);
-        },
+        "to plain page via root page": function () {
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                route: this.spy(function () {
+                    return page1;
+                }),
+                target: this.target,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy()
+            };
 
-        "re-renders with createElement": function () {
             var actualElement = document.createElement("div");
-            var c = {
-                createElement: this.spy(function () {
+            var page1 = {
+                createElement: function () {
                     return actualElement;
-                })
+                },
+                onNavigatedTo: this.spy(),
+                prepare: this.spy()
             };
-            Navstack.renderPage(c);
-            Navstack.renderPage(c);
-            assert.calledOnce(c.createElement);
-            assert.same(c.element, actualElement);
-        },
-
-        "calls pageDidLoad after createElement": function () {
-            var i = 0;
-            var c = {};
-            c.createElement = function () {
-                this.foo = 123;
-                return document.createElement("div");
-            }
-            c.pageDidLoad = function () {
-                ++this.foo;
-            }
-
-            Navstack.renderPage(c);
-            assert.equals(c.foo, 124);
-        },
-
-        "does not call pageDidLoad when already rendered": function () {
-            var c = {};
-            Navstack.renderPage(c);
-
-            c.pageDidLoad = this.stub();
-            Navstack.renderPage(c);
-            refute.called(c.pageDidLoad);
-        }
-    },
-
-    "page chain": {
-        setUp: function () {
-            this.bazPage = {};
-
-            this.barPage = {};
-            this.barPage.route = this.stub();
-            this.barPage.route.returns(this.bazPage);
-
-            this.fooPage = {};
-            this.fooPage.route = this.stub();
-            this.fooPage.route.returns(this.barPage);
-
-            this.n.rootPage = {};
-            this.n.rootPage.route = this.stub();
-            this.n.rootPage.route.returns(this.fooPage);
-        },
-
-        "navigation calls onnavigate callback": function () {
-            this.n.onnavigate = this.stub();
 
             this.n.navigate("/foo");
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/foo");
 
-            this.n.navigate("/foo/bar/baz");
-            assert.calledTwice(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/foo/bar/baz");
+            assertNavigatedTo(this.n, "/foo");
+            assert.pageRoutedTo(this.n.rootPage, "foo");
+            refute.pageNavigatedTo(this.n.rootPage);
+            assert.pageNavigatedTo(page1);
+            assert.pagePrepared(this.n.rootPage);
+            assert.pagePrepared(page1);
+            assertOnlyChild(this.target, actualElement);
+            refute.pageHasGeneratedElement(this.n.rootPage);
+            assert.pageHasGeneratedElement(page1);
         },
 
-        "navigation prepares all items": function () {
-            this.n.rootPage.prepare = function () {
-                this.root = 123;
-            }
+        "to page with its own element": function () {
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                route: this.spy(function () {
+                    return page1;
+                }),
+                target: this.target,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy()
+            };
+            var page1Target = document.createElement("div");
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy(),
+                target: page1Target
+            };
 
-            this.fooPage.prepare = function () {
-                this.foo = 123;
-            }
+            this.n.navigate("/boom");
 
-            this.barPage.prepare = function () {
-                this.bar = 123;
-            }
-
-            this.n.navigate("/foo/bar");
-            assert.equals(this.n.rootPage.root, 123);
-            assert.equals(this.fooPage.foo, 123);
-            assert.equals(this.barPage.bar, 123);
+            assertNavigatedTo(this.n, "/boom");
+            assert.pageRoutedTo(this.n.rootPage, "boom");
+            refute.pageNavigatedTo(this.n.rootPage);
+            assert.pageNavigatedTo(page1);
+            assert.pagePrepared(this.n.rootPage);
+            assert.pagePrepared(page1);
+            assert.pageHasGeneratedElement(this.n.rootPage);
+            assert.pageHasGeneratedElement(page1);
+            assertOnlyChild(this.target, this.n.rootPage.element);
+            assertOnlyChild(page1Target, page1.element);
         },
 
-        "navigation prepares all items with asynchronous prepare": function (done) {
-            var self = this;
+        "to subpage": function () {
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                route: this.spy(function () {
+                    return page1;
+                }),
+                target: this.target,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy()
+            };
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                route: this.spy(function () {
+                    return page2;
+                }),
+                onNavigatedTo: this.spy(),
+                prepare: this.spy(),
+            };
+            var page2 = {
+                createElement: this.defaultCreateElement,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy()
+            };
 
-            this.n.rootPage.prepare = function (done) {
-                this.root = 123;
-                setTimeout(done, 1);
-            }
 
-            this.fooPage.prepare = function (done) {
-                this.foo = 123;
-                setTimeout(done, 1);
-            }
+            this.n.navigate("/wakka/shakka");
 
-            this.barPage.prepare = function (done) {
-                this.bar = 123;
-                setTimeout(done, 1);
-            }
-
-            this.n.onnavigate = done(function () {
-                assert.equals(self.n.rootPage.root, 123);
-                assert.equals(self.fooPage.foo, 123);
-                assert.equals(self.barPage.bar, 123);
-            });
-
-            this.n.navigate("/foo/bar");
+            assertNavigatedTo(this.n, "/wakka/shakka");
+            assert.pageRoutedTo(this.n.rootPage, "wakka");
+            assert.pageRoutedTo(page1, "shakka");
+            refute.pageNavigatedTo(this.n.rootPage);
+            refute.pageNavigatedTo(page1);
+            assert.pageNavigatedTo(page2);
+            assert.pagePrepared(this.n.rootPage);
+            assert.pagePrepared(page1);
+            assert.pagePrepared(page2);
+            refute.pageHasGeneratedElement(this.n.rootPage);
+            refute.pageHasGeneratedElement(page1);
+            assert.pageHasGeneratedElement(page2);
+            assertOnlyChild(this.target, page2.element);
         },
 
-        "navigation renders only last item in stack": function () {
-            this.spy(Navstack, "renderPage");
-            this.n.navigate("/foo/bar");
+        "step by step": {
+            "pushing from root": function () {
+                this.n.rootPage = {
+                    createElement: this.defaultCreateElement,
+                    route: this.spy(function () {
+                        return page1;
+                    }),
+                    target: this.target,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+                var page1 = {
+                    createElement: this.defaultCreateElement,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy(),
+                    onNavigatedTo: this.spy()
+                };
 
-            assert.calledOnce(Navstack.renderPage);
-            assert.same(Navstack.renderPage.getCall(0).args[0], this.barPage);
-        },
-
-        "navigating to root page renders it": function () {
-            this.spy(Navstack, "renderPage");
-            this.n.navigate("/");
-            assert.calledOnce(Navstack.renderPage);
-            assert.same(Navstack.renderPage.getCall(0).args[0], this.n.rootPage);
-        },
-
-        "navigating to root page prepares it": function () {
-            this.n.rootPage.prepare = this.stub();
-            this.n.navigate("/");
-            assert.calledOnce(this.n.rootPage.prepare);
-        },
-
-        "navigating to root page calls onnavigate": function () {
-            this.n.onnavigate = this.stub();
-            this.n.navigate("/");
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/");
-        },
-
-        "navigating routes with segment name": function () {
-            this.n.navigate("/foo/bar/baz");
-            assert.calledWithExactly(this.n.rootPage.route, "foo");
-            assert.calledWithExactly(this.fooPage.route, "bar");
-            assert.calledWithExactly(this.barPage.route, "baz");
-        },
-
-        "navigating renders in target element": function () {
-            this.n.navigate("/foo");
-            assert.equals(this.target.childNodes.length, 1);
-            assert.same(this.target.firstChild, this.fooPage.element);
-        },
-
-        "navigating twice renders only current page": function () {
-            this.n.navigate("/foo");
-            this.n.navigate("/foo");
-            assert.equals(this.target.childNodes.length, 1);
-            assert.same(this.target.firstChild, this.fooPage.element);
-
-            this.n.navigate("/foo/bar");
-            assert.equals(this.target.childNodes.length, 1);
-            assert.same(this.target.firstChild, this.barPage.element);
-
-            this.n.navigate("/");
-            assert.equals(this.target.childNodes.length, 1);
-            assert.same(this.target.firstChild, this.n.rootPage.element);
-        },
-
-        "navigating to abstract root page prepares it": function () {
-            var self = this;
-            this.n.rootPage.abstractPage = this.stub();
-            this.n.rootPage.prepare = function () { this.root = 123; };
-
-            this.n.navigate("/");
-            assert.equals(this.n.rootPage.root, 123);
-        },
-
-        "navigating to abstract root page does not render it": function () {
-            this.n.rootPage.abstractPage = this.stub();
-            this.spy(Navstack, "renderPage");
-            this.n.navigate("/");
-            refute.called(Navstack.renderPage);
-        },
-
-        "navigating to abstract root page calls onnavigate": function () {
-            this.n.rootPage.abstractPage = this.stub();
-            this.n.onnavigate = this.stub();
-            this.n.navigate("/");
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/");
-        },
-
-        "navigating to abstract root page loads it": function () {
-            this.n.rootPage.abstractPage = this.stub();
-            this.n.rootPage.load = this.stub();
-            this.n.navigate("/");
-            assert.calledOnce(this.n.rootPage.abstractPage);
-        },
-
-        "navigating to abstract root page that performs navigatin": function () {
-            var self = this;
-            this.n.onnavigate = this.stub();
-            this.n.rootPage.abstractPage = function () { self.n.pushPage("foo") };
-            this.n.navigate("/");
-
-            assert.calledTwice(this.n.onnavigate);
-            assert.equals(this.n.onnavigate.getCall(0).args[0], "/");
-            assert.equals(this.n.onnavigate.getCall(1).args[0], "/foo");
-        },
-
-        "sequential steps": {
-            setUp: function () {
-                this.n.navigate("/foo");
-            },
-
-            "pushing one page calls onnavigate": function () {
-                this.n.onnavigate = this.stub();
-                this.n.pushPage("bar");
-                assert.calledOnce(this.n.onnavigate);
-                assert.calledWithExactly(this.n.onnavigate, "/foo/bar");
-            },
-
-            "pushing one page prepares it": function () {
-                this.barPage.prepare = function () {
-                    this.bar = "yup";
-                }
-                this.n.pushPage("bar");
-                assert.equals(this.barPage.bar, "yup");
-            },
-
-            "pushing one page prepares asynchronously": function (done) {
-                var self = this;
-                this.barPage.prepare = function (done) {
-                    this.bar = "yup";
-                    setTimeout(done, 1);
-                }
-                this.n.onnavigate = done(function () {
-                    assert.equals(self.barPage.bar, "yup");
-                });
-                this.n.pushPage("bar");
-            },
-
-            "pushing one page routes current page with that path name": function () {
-                this.n.pushPage("bar");
-                assert.calledWithExactly(this.fooPage.route, "bar");
-
-                this.n.pushPage("baz");
-                assert.calledWithExactly(this.barPage.route, "baz");
-            },
-
-            "pushing one page renders it": function () {
-                this.spy(Navstack, "renderPage");
-                this.n.pushPage("bar");
-
-                assert.calledOnce(Navstack.renderPage);
-                assert.same(Navstack.renderPage.getCall(0).args[0], this.barPage);
-            },
-
-            "pushing two pages prepares and renders both": function () {
-                this.barPage.prepare = this.stub();
-                this.bazPage.prepare = this.stub();
-                this.spy(Navstack, "renderPage");
-                this.n.onnavigate = this.stub();
-
-                this.n.pushPage("bar");
-                this.n.pushPage("baz");
-
-                assert.calledOnce(this.barPage.prepare);
-                assert.calledOnce(this.bazPage.prepare);
-                assert.calledTwice(Navstack.renderPage);
-                assert.same(Navstack.renderPage.getCall(0).args[0], this.barPage);
-                assert.same(Navstack.renderPage.getCall(1).args[0], this.bazPage);
-                assert.calledTwice(this.n.onnavigate);
-                assert.equals(this.n.onnavigate.getCall(0).args[0], "/foo/bar");
-                assert.equals(this.n.onnavigate.getCall(1).args[0], "/foo/bar/baz");
-            },
-
-            "pushing one page renders that page in target": function () {
-                this.n.pushPage("bar");
-                assert.equals(this.target.childNodes.length, 1);
-                assert.same(this.target.firstChild, this.barPage.element);
-            },
-
-            "popping one page calls onnavigate": function () {
-                this.n.onnavigate = this.stub();
-                this.n.popPage();
-                assert.calledOnce(this.n.onnavigate);
-                assert.calledWithExactly(this.n.onnavigate, "/");
-            },
-
-            "popping one page renders previous page": function () {
-                this.spy(Navstack, "renderPage");
-                this.n.popPage();
-                assert.calledOnce(Navstack.renderPage);
-                assert.same(Navstack.renderPage.getCall(0).args[0], this.n.rootPage);
-            },
-
-            "popping one page does not prepare previous page": function () {
-                this.n.rootPage.prepare = this.stub();
-                this.n.popPage();
-                refute.called(this.n.rootPage.prepare);
-            },
-
-            "popping on root page does not render or prepare": function () {
                 this.n.navigate("/");
-                this.spy(Navstack, "renderPage");
-                this.n.rootPage.prepare = this.stub();
-                this.fooPage.prepare = this.stub();
 
-                this.n.popPage();
+                this.n.onNavigate = this.stub();
+                this.n.pushPathSegment("boom");
 
-                refute.called(Navstack.renderPage);
-                refute.called(this.n.rootPage.prepare);
-                refute.called(this.fooPage.prepare);
+                assertNavigatedTo(this.n, "/boom");
+                assert.pageRoutedTo(this.n.rootPage, "boom");
+                assert.pageNavigatedTo(this.n.rootPage);
+                assert.pageNavigatedTo(page1);
+                assert.pagePrepared(this.n.rootPage);
+                assert.pagePrepared(page1);
+                assert.pageHasGeneratedElement(this.n.rootPage);
+                assert.pageHasGeneratedElement(page1);
+                assertOnlyChild(this.target, page1.element);
             },
 
-            "popping twice renders prev and prev prev page": function () {
-                this.n.navigate("/foo/bar/baz");
-                this.spy(Navstack, "renderPage");
-                this.barPage.prepare = this.stub();
-                this.fooPage.prepare = this.stub();
+            "popping from page": function () {
+                this.n.rootPage = {
+                    createElement: this.defaultCreateElement,
+                    route: this.spy(function () {
+                        return page1;
+                    }),
+                    target: this.target,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+                var page1 = {
+                    createElement: this.defaultCreateElement,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy(),
+                    onNavigatedTo: this.spy()
+                };
 
-                this.n.popPage();
-                refute.called(this.barPage.prepare);
-                refute.called(this.fooPage.prepare);
-                assert.calledOnce(Navstack.renderPage);
-                assert.same(Navstack.renderPage.getCall(0).args[0], this.barPage);
+                this.n.navigate("/boom");
 
+                this.n.onNavigate = this.stub();
                 this.n.popPage();
-                refute.called(this.barPage.prepare);
-                refute.called(this.fooPage.prepare);
-                assert.calledTwice(Navstack.renderPage);
-                assert.same(Navstack.renderPage.getCall(1).args[0], this.fooPage);
+
+                assertNavigatedTo(this.n, "/");
+                assertOnlyChild(this.target, this.n.rootPage.element);
             },
 
-            "popping renders page in target": function () {
-                this.n.pushPage("bar");
+            "popping to unrendered page": function () {
+                this.n.rootPage = {
+                    createElement: this.defaultCreateElement,
+                    route: this.spy(function () {
+                        return page1;
+                    }),
+                    target: this.target,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+                var page1 = {
+                    createElement: this.defaultCreateElement,
+                    route: this.spy(function () {
+                        return page2;
+                    }),
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy(),
+                    onNavigatedTo: this.spy()
+                };
+                var page2 = {
+                    createElement: this.defaultCreateElement,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                this.n.navigate("/foo/bar");
+
+                refute.pageNavigatedTo(page1);
+                refute.pageHasGeneratedElement(page1);
+                assertOnlyChild(this.target, page2.element);
 
                 this.n.popPage();
-                assert.equals(this.target.childNodes.length, 1);
-                assert.same(this.target.firstChild, this.fooPage.element);
+
+                assert.pageNavigatedTo(page1);
+                assert.pageHasGeneratedElement(page1);
+                assertOnlyChild(this.target, page1.element);
+            },
+
+            "popping when at root page": function () {
+                this.n.rootPage = {
+                    createElement: this.defaultCreateElement,
+                    target: this.target,
+                };
+
+                this.n.navigate("/");
+                this.n.onNavigate = this.stub();
 
                 this.n.popPage();
-                assert.equals(this.target.childNodes.length, 1);
-                assert.same(this.target.firstChild, this.n.rootPage.element);
-            }
+                refute.called(this.n.onNavigate);
+                assertOnlyChild(this.target, this.n.rootPage.element);
+            },
+
+            "relative push": function () {
+            },
+
+            "relative pop": function () {
+            },
+        },
+
+        "to abstract root page": function () {
+            var self = this;
+
+            this.n.rootPage = {
+                route: this.spy(function () {
+                    return page1;
+                }),
+                target: this.target,
+                onNavigatedTo: this.spy(function () {
+                    self.n.pushPathSegment("blaz");
+                }),
+                prepare: this.spy()
+            };
+
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                onNavigatedTo: this.spy(),
+                prepare: this.spy(),
+                onNavigatedTo: this.spy()
+            };
+
+            this.n.navigate("/");
+            assert.calledTwice(this.n.onNavigate);
+            assert.calledWithExactly(this.n.onNavigate, "/blaz");
+            assert.pageRoutedTo(this.n.rootPage, "blaz");
+            assert.pageNavigatedTo(this.n.rootPage);
+            assert.pageNavigatedTo(page1);
+            assert.pagePrepared(this.n.rootPage),
+            assert.pagePrepared(page1),
+            refute.pageHasGeneratedElement(this.n.rootPage);
+            assert.pageHasGeneratedElement(page1);
+            assertOnlyChild(this.target, page1.element);
         }
     },
 
-    "nesting": {
-        setUp: function () {
-            this.barPage = {};
+    "asynchronous prepare": function (done) {
+        var rootPage = {
+            prepare: function (done) {
+                setTimeout(done, 1);
+            },
+            target: document.createElement("div")
+        };
+        this.n.rootPage = rootPage;
 
-            this.target2 = document.createElement("div");
-            this.n2 = new Navstack();
-            this.n2.target = this.target2;
-            this.n2.rootPage = {};
-            this.n2.rootPage.route = this.stub();
-            this.n2.rootPage.route.returns(this.barPage);
+        this.n.onNavigate = done(function () {
+            assert(true);
+        });
 
-            this.fooPage = {};
-            this.fooPage.route = this.stub();
-            this.fooPage.route.returns(this.n2);
-
-            this.n.rootPage = {};
-            this.n.rootPage.route = this.stub();
-            this.n.rootPage.route.returns(this.fooPage);
-        },
-
-        "should render root page": function () {
-            this.spy(Navstack, "renderPage");
-            this.n.navigate("/foo/nav2");
-            assert.called(Navstack.renderPage);
-            assert.calledWithExactly(Navstack.renderPage, this.n2.rootPage);
-        },
-
-        "should prepare pages": function () {
-            this.n.rootPage.prepare = function () {
-                this.root = 123;
-            }
-
-            this.fooPage.prepare = function () {
-                this.foo = 123;
-            }
-
-            this.n2.rootPage.prepare = function () {
-                this.root = 123;
-            }
-
-            this.n.navigate("/foo/nav2");
-            assert.equals(this.n.rootPage.root, 123);
-            assert.equals(this.fooPage.foo, 123);
-            assert.equals(this.n2.rootPage.root, 123);
-        },
-
-        "should render root page in nested navstack target": function () {
-            this.n.navigate("/foo");
-            assert.equals(this.target2.childNodes.length, 0);
-            this.n.navigate("/foo/nav2");
-            assert.equals(this.target2.childNodes.length, 1);
-            assert.same(this.target2.firstChild, this.n2.rootPage.element);
-        },
-
-        "should call onnavigate": function () {
-            this.n.onnavigate = this.stub();
-            this.n.navigate("/foo/nav2");
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
-        },
-
-        "pushing to nested navstack should render": function () {
-            this.n.navigate("/foo");
-            this.n.pushPage("nav2");
-            assert.same(this.target2.firstChild, this.n2.rootPage.element);
-        },
-
-        "pushing to nested navstack should call onnavigate": function () {
-            this.n.navigate("/foo");
-            this.n.onnavigate = this.stub();
-            this.n.pushPage("nav2");
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
-        },
-
-        "pushing to nested page should render": function () {
-            this.n.navigate("/foo/nav2");
-            this.n.pushPage("bar");
-            assert.same(this.target2.firstChild, this.barPage.element);
-        },
-
-        "popping from nested navstack should render": function () {
-            this.n.navigate("/foo/nav2");
-            this.n.popPage();
-            assert.same(this.target.firstChild, this.fooPage.element);
-        },
-
-        "popping from nested navstack should call onnavigate": function () {
-            this.n.navigate("/foo/nav2");
-            this.n.onnavigate = this.stub();
-            this.n.popPage();
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/foo");
-        },
-
-        "popping from nested page should render": function () {
-            this.n.navigate("/foo/nav2/bar");
-            this.n.popPage();
-            assert.same(this.target2.firstChild, this.n2.rootPage.element);
-        },
-
-        "popping form nested page should call onnavigate": function () {
-            this.n.navigate("/foo/nav2/bar");
-            this.n.onnavigate = this.stub();
-            this.n.popPage();
-            assert.calledOnce(this.n.onnavigate);
-            assert.calledWithExactly(this.n.onnavigate, "/foo/nav2");
-        },
-
-        "navigating should update all target elements": function () {
-            var target3 = document.createElement("div");
-            var n3 = new Navstack();
-            n3.target = target3;
-            n3.rootPage = {};
-
-            this.barPage.route = this.stub();
-            this.barPage.route.returns(n3);
-
-            this.n.navigate("/foo/nav2/bar/nav3");
-            assert.same(this.target.firstChild, this.fooPage.element);
-            assert.same(this.target2.firstChild, this.barPage.element);
-            assert.same(target3.firstChild, n3.rootPage.element);
-        },
-
-        "navigating to nested abstract root page": function () {
-            this.n2.rootPage.abstractPage = this.stub();
-            this.n.navigate("/foo/nav2");
-            assert.calledOnce(this.n2.rootPage.abstractPage);
-        },
-
-        "navigating to nested abstract navstack with abstract root navstack": function () {
-            this.n.rootPage.abstractPage = this.stub();
-            this.n2.rootPage.abstractPage = this.stub();
-            this.n.navigate("/foo/nav2");
-            refute.called(this.n.rootPage.abstractPage);
-            assert.calledOnce(this.n2.rootPage.abstractPage);
-        }
+        this.n.navigate("/");
     }
 });
