@@ -256,6 +256,36 @@ buster.testCase("navstack", {
             },
 
             "relative push": function () {
+                this.n.rootPage = {
+                    createElement: this.defaultCreateElement,
+                    route: this.spy(function () {
+                        return page1;
+                    }),
+                    target: this.target,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+                var page1 = {
+                    createElement: this.defaultCreateElement,
+                    route: this.spy(function () {
+                        return page2;
+                    }),
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy(),
+                    onNavigatedTo: this.spy()
+                };
+                var page2 = {
+                    createElement: this.defaultCreateElement,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                this.n.navigate("/foo/bar");
+                this.n.onNavigate = this.stub();
+                this.n.pushPathSegmentRelative("foo", this.n.rootPage);
+
+                assertNavigatedTo(this.n, "/foo");
+                assertOnlyChild(this.target, page1.element);
             },
 
             "relative pop": function () {

@@ -35,6 +35,22 @@
             });
         },
 
+        pushPathSegmentRelative: function (pathSegment, page) {
+            var self = this;
+            var stack = [];
+            for (var i = 0, ii = this._stack.length; i < ii; i++) {
+                var stackItem = this._stack[i];
+                stack.push(stackItem);
+                if (stackItem.page === page) break;
+            }
+
+            navigateIter([pathSegment], stack, function (stack) {
+                self._stack = stack;
+                self._renderStack();
+                self._didNavigate();
+            });
+        },
+
         popPage: function () {
             if (this._stack.length === 1) return;
             this._stack.pop();
