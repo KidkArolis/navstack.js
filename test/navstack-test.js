@@ -34,6 +34,7 @@ buster.testCase("navstack", {
             assert.pagePrepared(this.n.rootPage);
             assertOnlyChild(this.target, actualElement);
             assert.pageHasGeneratedElement(this.n.rootPage);
+            assert.equals(this.n.currentPath(), "/");
         },
 
         "to plain page via root page": function () {
@@ -67,6 +68,7 @@ buster.testCase("navstack", {
             assertOnlyChild(this.target, actualElement);
             refute.pageHasGeneratedElement(this.n.rootPage);
             assert.pageHasGeneratedElement(page1);
+            assert.equals(this.n.currentPath(), "/foo");
         },
 
         "to page with its own element": function () {
@@ -99,6 +101,7 @@ buster.testCase("navstack", {
             assert.pageHasGeneratedElement(page1);
             assertOnlyChild(this.target, this.n.rootPage.element);
             assertOnlyChild(page1Target, page1.element);
+            assert.equals(this.n.currentPath(), "/boom");
         },
 
         "to subpage": function () {
@@ -141,6 +144,7 @@ buster.testCase("navstack", {
             refute.pageHasGeneratedElement(page1);
             assert.pageHasGeneratedElement(page2);
             assertOnlyChild(this.target, page2.element);
+            assert.equals(this.n.currentPath(), "/wakka/shakka");
         },
 
         "step by step": {

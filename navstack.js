@@ -58,6 +58,15 @@
             this._didNavigate();
         },
 
+        currentPath: function () {
+            var pathSegments = [];
+            for (var i = 1, ii = this._stack.length; i < ii; i++) {
+                pathSegments.push(this._stack[i].pathSegment);
+            }
+
+            return "/" + pathSegments.join("/");
+        },
+
         _renderStack: function () {
             var pageGroups = pagesGroupedByTargetForStack(this._stack);
             for (var i = 0, ii = pageGroups.length; i < ii; i++) {
@@ -76,11 +85,7 @@
         },
 
         _didNavigate: function () {
-            var pathSegments = [];
-            for (var i = 1, ii = this._stack.length; i < ii; i++) {
-                pathSegments.push(this._stack[i].pathSegment);
-            }
-            this.onNavigate && this.onNavigate("/" + pathSegments.join("/"));
+            this.onNavigate && this.onNavigate(this.currentPath());
 
             var topStackItem = this._stack[this._stack.length - 1];
             var page = topStackItem.page;
