@@ -288,7 +288,7 @@ buster.testCase("navstack", {
                 assertOnlyChild(this.target, page1.element);
             },
 
-            "relative pop": function () {
+            "// relative pop": function () {
             },
         },
 
