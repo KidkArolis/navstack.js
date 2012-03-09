@@ -147,6 +147,36 @@ buster.testCase("navstack", {
             assert.equals(this.n.currentPath(), "/wakka/shakka");
         },
 
+        "current path while building": function () {
+            var self = this;
+
+            var prepareFunc = function () {
+                this.curPath = self.n.currentPath();
+            };
+
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                target: this.target,
+                prepare: prepareFunc,
+                route: function () { return page1; }
+            };
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                prepare: prepareFunc,
+                route: function () { return page2; }
+            }
+            var page2 = {
+                createElement: this.defaultCreateElement,
+                prepare: prepareFunc
+            }
+
+            this.n.navigate("/foo/bar");
+
+            assert.equals(this.n.rootPage.curPath, "/");
+            assert.equals(page1.curPath, "/foo");
+            assert.equals(page2.curPath, "/foo/bar");
+        },
+
         "step by step": {
             "pushing from root": function () {
                 this.n.rootPage = {

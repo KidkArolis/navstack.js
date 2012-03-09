@@ -17,10 +17,9 @@
             }
 
             pathSegments.unshift(null);
-            var stack  = [{page: {route: function () { return self.rootPage; }}}];
+            this._stack = [{page: {route: function () { return self.rootPage; }}}];
 
-            navigateIter(pathSegments, stack, function (stack) {
-                self._stack = stack.slice(1);
+            navigateIter(pathSegments, this._stack, function (stack) {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -29,7 +28,6 @@
         pushPathSegment: function (pathSegment) {
             var self = this;
             navigateIter([pathSegment], this._stack, function (stack) {
-                self._stack = stack;
                 self._renderStack();
                 self._didNavigate();
             });
@@ -43,16 +41,16 @@
                 stack.push(stackItem);
                 if (stackItem.page === page) break;
             }
+            this._stack = stack;
 
-            navigateIter([pathSegment], stack, function (stack) {
-                self._stack = stack;
+            navigateIter([pathSegment], this._stack, function (stack) {
                 self._renderStack();
                 self._didNavigate();
             });
         },
 
         popPage: function () {
-            if (this._stack.length === 1) return;
+            if (this._stack.length === 2) return;
             this._stack.pop();
             this._renderStack();
             this._didNavigate();
@@ -60,7 +58,7 @@
 
         currentPath: function () {
             var pathSegments = [];
-            for (var i = 1, ii = this._stack.length; i < ii; i++) {
+            for (var i = 2, ii = this._stack.length; i < ii; i++) {
                 pathSegments.push(this._stack[i].pathSegment);
             }
 
@@ -102,8 +100,9 @@
         var pathSegment = pathSegments[0];
         var newPage = topStackItem.page.route(pathSegment);
         var newStackItem = {page: newPage, pathSegment: pathSegment};
+        stack.push(newStackItem);
         loadPage(newPage, function () {
-            navigateIter(pathSegments.slice(1), stack.concat(newStackItem), done);
+            navigateIter(pathSegments.slice(1), stack, done);
         });
     }
 
