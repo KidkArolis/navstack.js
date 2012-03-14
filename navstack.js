@@ -101,16 +101,19 @@
         var newPage = topStackItem.page.route(pathSegment);
         var newStackItem = {page: newPage, pathSegment: pathSegment};
         stack.push(newStackItem);
-        loadPage(newPage, function () {
-            navigateIter(pathSegments.slice(1), stack, done);
+        loadPage(newPage, function (status) {
+            if (status === false) {
+                done(stack);
+            } else {
+                navigateIter(pathSegments.slice(1), stack, done);
+            }
         });
     }
 
     function loadPage(page, done) {
         if ("prepare" in page) {
             if (page.prepare.length == 0) {
-                page.prepare();
-                done();
+                done(page.prepare());
             } else {
                 page.prepare(done);
             }

@@ -177,6 +177,54 @@ buster.testCase("navstack", {
             assert.equals(page2.curPath, "/foo/bar");
         },
 
+        "cancelling by returning false": function () {
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                target: this.target,
+                prepare: function () {
+                    return false;
+                },
+                route: function () { return page1; },
+                onNavigatedTo: this.spy()
+            }
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                prepare: this.spy(),
+                onNavigatedTo: this.spy(),
+            }
+
+            this.n.navigate("/foo");
+            assertNavigatedTo(this.n, "/");
+            assert.pageHasGeneratedElement(this.n.rootPage);
+            refute.pageHasGeneratedElement(page1);
+            assert.pageNavigatedTo(this.n.rootPage);
+            refute.pageNavigatedTo(page1);
+        },
+
+        "cancelling by asynchronously passing false": function () {
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                target: this.target,
+                prepare: function (done) {
+                    done(false);
+                },
+                route: function () { return page1; },
+                onNavigatedTo: this.spy()
+            }
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                prepare: this.spy(),
+                onNavigatedTo: this.spy(),
+            }
+
+            this.n.navigate("/foo");
+            assertNavigatedTo(this.n, "/");
+            assert.pageHasGeneratedElement(this.n.rootPage);
+            refute.pageHasGeneratedElement(page1);
+            assert.pageNavigatedTo(this.n.rootPage);
+            refute.pageNavigatedTo(page1);
+        },
+
         "step by step": {
             "pushing from root": function () {
                 this.n.rootPage = {
