@@ -1,3 +1,10 @@
+/**
+ * Navstack.js
+ * http://github.com/augustl/navstack.js
+ *
+ * Licensed under the revised BSD license: http://www.opensource.org/licenses/BSD-3-Clause
+ * August Lilleaas <august@augustl.com>
+ */
 (function (GLOBAL) {
     var Navstack = function () {}
 
