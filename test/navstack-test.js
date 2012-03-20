@@ -10,12 +10,6 @@ buster.testCase("navstack", {
     },
 
     "navigation": {
-        setUp: function () {
-            this.n._loadPage = function (page) {
-                page.prepare && page.prepare();
-            };
-        },
-
         "to plain root page": function () {
             var actualElement = document.createElement("div");
             this.n.rootPage = {
