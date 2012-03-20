@@ -23,6 +23,7 @@
                 pathSegments = path.split("/");
             }
 
+            this._willNavigateAway();
             pathSegments.unshift(null);
             this._stack = [{page: {route: function () { return self.rootPage; }}}];
 
@@ -34,6 +35,7 @@
 
         pushPathSegment: function (pathSegment) {
             var self = this;
+            this._willNavigateAway();
             navigateIter([pathSegment], this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
@@ -41,6 +43,8 @@
         },
 
         pushPathSegmentRelative: function (pathSegment, page) {
+            this._willNavigateAway();
+
             var self = this;
             var stack = [];
             for (var i = 0, ii = this._stack.length; i < ii; i++) {
@@ -58,6 +62,7 @@
 
         popPage: function () {
             if (this._stack.length === 2) return;
+            this._willNavigateAway();
             this._stack.pop();
             this._renderStack();
             this._didNavigate();
@@ -95,6 +100,12 @@
             var topStackItem = this._stack[this._stack.length - 1];
             var page = topStackItem.page;
             page.onNavigatedTo && page.onNavigatedTo();
+        },
+
+        _willNavigateAway: function () {
+            if (!this._stack) return;
+            var topPage = this._stack[this._stack.length - 1].page;
+            topPage.onNavigatedAway && topPage.onNavigatedAway();
         }
     };
 

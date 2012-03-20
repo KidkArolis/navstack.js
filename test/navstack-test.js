@@ -219,6 +219,35 @@ buster.testCase("navstack", {
             refute.pageNavigatedTo(page1);
         },
 
+        "navigates away from page": function () {
+            this.n.rootPage = {
+                createElement: this.defaultCreateElement,
+                target: this.target,
+                route: function () { return page1; },
+                onNavigatedAway: this.spy()
+            }
+            var page1 = {
+                createElement: this.defaultCreateElement,
+                onNavigatedAway: this.spy()
+            }
+
+            this.n.navigate("/");
+            refute.called(this.n.rootPage.onNavigatedAway);
+            refute.called(page1.onNavigatedAway);
+
+            this.n.navigate("/foo");
+            assert.calledOnce(this.n.rootPage.onNavigatedAway);
+            refute.called(page1.onNavigatedAway);
+
+            this.n.navigate("/");
+            assert.calledOnce(this.n.rootPage.onNavigatedAway);
+            assert.calledOnce(page1.onNavigatedAway);
+
+            this.n.navigate("/foo");
+            assert.calledTwice(this.n.rootPage.onNavigatedAway);
+            assert.calledOnce(page1.onNavigatedAway);
+        },
+
         "step by step": {
             "pushing from root": function () {
                 this.n.rootPage = {
@@ -228,6 +257,7 @@ buster.testCase("navstack", {
                     }),
                     target: this.target,
                     onNavigatedTo: this.spy(),
+                    onNavigatedAway: this.spy(),
                     prepare: this.spy()
                 };
                 var page1 = {
@@ -251,6 +281,7 @@ buster.testCase("navstack", {
                 assert.pageHasGeneratedElement(this.n.rootPage);
                 assert.pageHasGeneratedElement(page1);
                 assertOnlyChild(this.target, page1.element);
+                assert.calledOnce(this.n.rootPage.onNavigatedAway);
             },
 
             "popping from page": function () {
@@ -261,13 +292,15 @@ buster.testCase("navstack", {
                     }),
                     target: this.target,
                     onNavigatedTo: this.spy(),
+                    onNavigatedAway: this.spy(),
                     prepare: this.spy()
                 };
                 var page1 = {
                     createElement: this.defaultCreateElement,
                     onNavigatedTo: this.spy(),
                     prepare: this.spy(),
-                    onNavigatedTo: this.spy()
+                    onNavigatedTo: this.spy(),
+                    onNavigatedAway: this.spy()
                 };
 
                 this.n.navigate("/boom");
@@ -277,6 +310,7 @@ buster.testCase("navstack", {
 
                 assertNavigatedTo(this.n, "/");
                 assertOnlyChild(this.target, this.n.rootPage.element);
+                assert.calledOnce(page1.onNavigatedAway);
             },
 
             "popping to unrendered page": function () {
@@ -321,6 +355,7 @@ buster.testCase("navstack", {
                 this.n.rootPage = {
                     createElement: this.defaultCreateElement,
                     target: this.target,
+                    onNavigatedAway: this.spy()
                 };
 
                 this.n.navigate("/");
@@ -329,6 +364,7 @@ buster.testCase("navstack", {
                 this.n.popPage();
                 refute.called(this.n.onNavigate);
                 assertOnlyChild(this.target, this.n.rootPage.element);
+                refute.called(this.n.rootPage.onNavigatedAway);
             },
 
             "relative push": function () {
@@ -353,6 +389,7 @@ buster.testCase("navstack", {
                 var page2 = {
                     createElement: this.defaultCreateElement,
                     onNavigatedTo: this.spy(),
+                    onNavigatedAway: this.spy(),
                     prepare: this.spy()
                 };
 
@@ -362,6 +399,7 @@ buster.testCase("navstack", {
 
                 assertNavigatedTo(this.n, "/foo");
                 assertOnlyChild(this.target, page1.element);
+                assert.calledOnce(page2.onNavigatedAway);
             },
 
             "// relative pop": function () {
