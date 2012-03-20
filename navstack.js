@@ -19,7 +19,7 @@
             pathSegments.unshift(null);
             this._stack = [{page: {route: function () { return self.rootPage; }}}];
 
-            navigateIter(pathSegments, this._stack, function (stack) {
+            navigateIter(pathSegments, this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -27,7 +27,7 @@
 
         pushPathSegment: function (pathSegment) {
             var self = this;
-            navigateIter([pathSegment], this._stack, function (stack) {
+            navigateIter([pathSegment], this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -43,7 +43,7 @@
             }
             this._stack = stack;
 
-            navigateIter([pathSegment], this._stack, function (stack) {
+            navigateIter([pathSegment], this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -93,7 +93,7 @@
 
     function navigateIter(pathSegments, stack, done) {
         if (pathSegments.length == 0) {
-            return done(stack);
+            return done();
         }
 
         var topStackItem = stack[stack.length - 1];
