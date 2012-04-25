@@ -1,13 +1,15 @@
 (function () {
+    function getDefaultCreateElement() {
+        return sinon.spy.create(function () {
+            return document.createElement("div");
+        });
+    }
+
     buster.testCase("navstack", {
         setUp: function () {
             this.target = document.createElement("div");
             this.n = new Navstack();
             this.n.onNavigate = this.stub();
-
-            this.defaultCreateElement = sinon.spy.create(function () {
-                return document.createElement("div");
-            });
         },
 
         "navigation": {
@@ -34,7 +36,7 @@
 
             "to plain page via root page": function () {
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     route: this.spy(function () {
                         return page1;
                     }),
@@ -68,7 +70,7 @@
 
             "to page with its own element": function () {
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     route: this.spy(function () {
                         return page1;
                     }),
@@ -78,7 +80,7 @@
                 };
                 var page1Target = document.createElement("div");
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     onNavigatedTo: this.spy(),
                     prepare: this.spy(),
                     target: page1Target
@@ -101,7 +103,7 @@
 
             "to subpage": function () {
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     route: this.spy(function () {
                         return page1;
                     }),
@@ -110,7 +112,7 @@
                     prepare: this.spy()
                 };
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     route: this.spy(function () {
                         return page2;
                     }),
@@ -118,7 +120,7 @@
                     prepare: this.spy(),
                 };
                 var page2 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     onNavigatedTo: this.spy(),
                     prepare: this.spy()
                 };
@@ -150,18 +152,18 @@
                 };
 
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     target: this.target,
                     prepare: prepareFunc,
                     route: function () { return page1; }
                 };
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     prepare: prepareFunc,
                     route: function () { return page2; }
                 }
                 var page2 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     prepare: prepareFunc
                 }
 
@@ -174,7 +176,7 @@
 
             "cancelling by returning false": function () {
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     target: this.target,
                     prepare: function () {
                         return false;
@@ -183,7 +185,7 @@
                     onNavigatedTo: this.spy()
                 }
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     prepare: this.spy(),
                     onNavigatedTo: this.spy(),
                 }
@@ -198,7 +200,7 @@
 
             "cancelling by asynchronously passing false": function () {
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     target: this.target,
                     prepare: function (done) {
                         done(false);
@@ -207,7 +209,7 @@
                     onNavigatedTo: this.spy()
                 }
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     prepare: this.spy(),
                     onNavigatedTo: this.spy(),
                 }
@@ -222,13 +224,13 @@
 
             "navigates away from page": function () {
                 this.n.rootPage = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     target: this.target,
                     route: function () { return page1; },
                     onNavigatedAway: this.spy()
                 }
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     onNavigatedAway: this.spy()
                 }
 
@@ -252,7 +254,7 @@
             "step by step": {
                 "pushing from root": function () {
                     this.n.rootPage = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         route: this.spy(function () {
                             return page1;
                         }),
@@ -262,7 +264,7 @@
                         prepare: this.spy()
                     };
                     var page1 = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy(),
                         prepare: this.spy(),
                         onNavigatedTo: this.spy()
@@ -287,7 +289,7 @@
 
                 "popping from page": function () {
                     this.n.rootPage = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         route: this.spy(function () {
                             return page1;
                         }),
@@ -297,7 +299,7 @@
                         prepare: this.spy()
                     };
                     var page1 = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy(),
                         prepare: this.spy(),
                         onNavigatedTo: this.spy(),
@@ -316,7 +318,7 @@
 
                 "popping to unrendered page": function () {
                     this.n.rootPage = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         route: this.spy(function () {
                             return page1;
                         }),
@@ -325,7 +327,7 @@
                         prepare: this.spy()
                     };
                     var page1 = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         route: this.spy(function () {
                             return page2;
                         }),
@@ -334,7 +336,7 @@
                         onNavigatedTo: this.spy()
                     };
                     var page2 = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy(),
                         prepare: this.spy()
                     };
@@ -354,7 +356,7 @@
 
                 "popping when at root page": function () {
                     this.n.rootPage = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         target: this.target,
                         onNavigatedAway: this.spy()
                     };
@@ -370,7 +372,7 @@
 
                 "relative push": function () {
                     this.n.rootPage = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         route: this.spy(function () {
                             return page1;
                         }),
@@ -379,7 +381,7 @@
                         prepare: this.spy()
                     };
                     var page1 = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         route: this.spy(function () {
                             return page2;
                         }),
@@ -388,7 +390,7 @@
                         onNavigatedTo: this.spy()
                     };
                     var page2 = {
-                        createElement: this.defaultCreateElement,
+                        createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy(),
                         onNavigatedAway: this.spy(),
                         prepare: this.spy()
@@ -422,7 +424,7 @@
                 };
 
                 var page1 = {
-                    createElement: this.defaultCreateElement,
+                    createElement: getDefaultCreateElement(),
                     onNavigatedTo: this.spy(),
                     prepare: this.spy(),
                     onNavigatedTo: this.spy()
