@@ -78,7 +78,8 @@
         },
 
         _renderStack: function () {
-            var pageGroups = pagesGroupedByTargetForStack(this._stack);
+            var stackWithoutDummyRoot = this._stack.slice(1);
+            var pageGroups = pagesGroupedByTargetForStack(stackWithoutDummyRoot);
             for (var i = 0, ii = pageGroups.length; i < ii; i++) {
                 var pageGroup = pageGroups[i];
 
