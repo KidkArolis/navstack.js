@@ -68,6 +68,27 @@
             this._didNavigate();
         },
 
+        gotoPage: function (page) {
+            var currentStackItem = this._stack[this._stack.length - 1];
+            var targetStackItem = this._stack.filter(function (s) {
+                return s.page === page;
+            })[0];
+
+            if (!targetStackItem) {
+                var msg = "Page passed to 'gotoPage' is not present in the current stack.";
+                throw new Error(msg);
+            }
+
+            if (currentStackItem === targetStackItem) {
+                return;
+            }
+
+            this._willNavigateAway();
+            this._stack = this._stack.slice(0, this._stack.indexOf(targetStackItem) + 1);
+            this._renderStack();
+            this._didNavigate();
+        },
+
         currentPath: function () {
             var pathSegments = [];
             for (var i = 2, ii = this._stack.length; i < ii; i++) {

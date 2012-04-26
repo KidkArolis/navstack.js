@@ -480,6 +480,64 @@
 
                 assertOnlyChild(this.n.rootPage.target, eventPage.element);
                 assertOnlyChild(eventAttendantsPage.target, eventAttendantsPage.element);
+            },
+
+            "goto": {
+                setUp: function () {
+                    this.n.rootPage = {
+                        name: "ROOT",
+                        createElement: getDefaultCreateElement(),
+                        target: this.target,
+                        route: function () { return this.page1; }.bind(this),
+                        onNavigatedTo: this.spy()
+                    }
+
+                    this.page1 = {
+                        name: "PAGE1",
+                        createElement: getDefaultCreateElement(),
+                        route: function () { return this.page2; }.bind(this),
+                        onNavigatedTo: this.spy()
+                    }
+
+                    this.page2 = {
+                        name: "PAGE2",
+                        createElement: getDefaultCreateElement(),
+                        route: function () { return this.page3; }.bind(this),
+                        onNavigatedTo: this.spy()
+                    }
+
+                    this.page3 = {
+                        name: "PAGE3",
+                        createElement: getDefaultCreateElement(),
+                        onNavigatedTo: this.spy()
+                    }
+                },
+
+                "current page does nothing": function () {
+                    this.n.navigate("/foo/bar/baz");
+                    this.n.gotoPage(this.page3);
+
+                    refute.called(this.page1.onNavigatedTo);
+                    refute.called(this.page2.onNavigatedTo);
+                    assert.calledOnce(this.page3.onNavigatedTo);
+                },
+
+                "stack page navigates to that page": function () {
+                    this.n.navigate("/foo/bar/baz");
+                    this.n.gotoPage(this.page1);
+
+                    assert.calledOnce(this.page1.onNavigatedTo);
+                    refute.called(this.page2.onNavigatedTo);
+                    assert.calledOnce(this.page3.onNavigatedTo);
+                    assertOnlyChild(this.target, this.page1.element);
+                },
+
+                "non-existent page throws error": function () {
+                    this.n.navigate("/foo/bar/baz");
+                    assert.exception(function () {
+                        this.n.gotoPage({});
+                    }.bind(this));
+                }
             }
         },
 
