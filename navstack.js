@@ -121,6 +121,8 @@
         var newStackItem = {page: newPage, pathSegment: pathSegment};
         stack.push(newStackItem);
         loadPage(newPage, function (status) {
+            if (!pageIsAbstract(newPage)) Navstack.getPageElement(newPage);
+
             if (status === false) {
                 done(stack);
             } else {

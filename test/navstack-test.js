@@ -63,7 +63,7 @@
                 assert.pagePrepared(this.n.rootPage);
                 assert.pagePrepared(page1);
                 assertOnlyChild(this.target, actualElement);
-                refute.pageHasGeneratedElement(this.n.rootPage);
+                assert.pageHasGeneratedElement(this.n.rootPage);
                 assert.pageHasGeneratedElement(page1);
                 assert.equals(this.n.currentPath(), "/foo");
             },
@@ -137,8 +137,10 @@
                 assert.pagePrepared(this.n.rootPage);
                 assert.pagePrepared(page1);
                 assert.pagePrepared(page2);
-                refute.pageHasGeneratedElement(this.n.rootPage);
-                refute.pageHasGeneratedElement(page1);
+                assert.pageHasGeneratedElement(this.n.rootPage);
+                // TODO: We don't really need this element created at all times,
+                // since it's not displayed. Only create element if user requests it?
+                assert.pageHasGeneratedElement(page1);
                 assert.pageHasGeneratedElement(page2);
                 assertOnlyChild(this.target, page2.element);
                 assert.equals(this.n.currentPath(), "/wakka/shakka");
@@ -342,11 +344,6 @@
                     };
 
                     this.n.navigate("/foo/bar");
-
-                    refute.pageNavigatedTo(page1);
-                    refute.pageHasGeneratedElement(page1);
-                    assertOnlyChild(this.target, page2.element);
-
                     this.n.popPage();
 
                     assert.pageNavigatedTo(page1);
@@ -441,6 +438,48 @@
                 refute.pageHasGeneratedElement(this.n.rootPage);
                 assert.pageHasGeneratedElement(page1);
                 assertOnlyChild(this.target, page1.element);
+            },
+
+            "test renders stack items while building the stack": function () {
+                var eventAttendantsPageTarget = document.createElement("div");
+
+                this.n.rootPage = {
+                    createElement: getDefaultCreateElement(),
+                    target: this.target,
+                    route: function () { return eventsListPage; }
+                };
+
+                var eventsListPage = {
+                    createElement: getDefaultCreateElement(),
+                    route: function () { return eventPage; }
+                };
+
+                var eventPage = {
+                    createElement: this.spy(function () {
+                        var element = document.createElement("div");
+                        this.eventAttendantsPageTarget = eventAttendantsPageTarget;
+                        element.appendChild(this.eventAttendantsPageTarget);
+                        return element;
+                    }),
+                    route: function () {
+                        eventAttendantsPage.target = this.eventAttendantsPageTarget;
+                        return eventAttendantsPage;
+                    }
+                };
+
+                var eventAttendantsPage = {
+                    createElement: getDefaultCreateElement()
+                };
+
+                this.n.navigate("/events/123/attendants");
+
+                assert.calledOnce(this.n.rootPage.createElement);
+                assert.calledOnce(eventsListPage.createElement);
+                assert.calledOnce(eventPage.createElement);
+                assert.calledOnce(eventAttendantsPage.createElement);
+
+                assertOnlyChild(this.n.rootPage.target, eventPage.element);
+                assertOnlyChild(eventAttendantsPage.target, eventAttendantsPage.element);
             }
         },
 
