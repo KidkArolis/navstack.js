@@ -29,12 +29,14 @@ You need to set a root page and a target element.
 
     var myRootPage = {} // Or new MyRootPage(), or whatever.
     n.rootPage = myRootPage;
-    n.target = document.body; // Or jQuery("body").get(0), or whatever.
+    n.rootPagetarget = document.body; // Or jQuery("body").get(0), or whatever.
 
 You can also listen to URL changes. navstack.js does not attempt to set document.location.hash or use HTML5 pushState, that's up to you.
 
-    n.onnavigate = function (path) {
+    n.onNavigate = function (path) {
         // ...do stuff with path
+        // document.location.hash = path
+        // ..or whatever
     }
 
 Now you're ready to enable your navigation stack.
@@ -64,7 +66,7 @@ The only requirement is that you return a DOM element. You're free to use any te
 
 Having a single page is not that useful. You probably want to navigate deeper into your application's pages and views.
 
-    n.pushPage("events");
+    n.pushPathSegment("events");
 
 In general, pushing a new page will call "route" on the page that's currently on the top of the navigation stack. At this point in time, it's the root page.
 
@@ -121,8 +123,13 @@ We'll assume your template creates a list of all the events, and binds a click e
 
     onEventClick: function (e) {
         var eventId = e.targetElement.getAttribute("data-id");
-        nav.pushPage(eventId);
+        n.pushPathSegmentRelative(eventId, this);
     }
+
+Note that it is very useful to do relative pushes, so that your push will work even if you're on another part of the page stack (which may happen in partial page updates and/or nested pages).
+
+    n.pushPathSegment("foo");
+    n.pushPathSegmentRelative("foo", myRootPage); // Safer
 
 As we saw earlier, pushPage will call route on the currently visible page. Here's how we can implement this route function to respond to the dynamic event IDs passed to it.
 
@@ -135,4 +142,15 @@ As we saw earlier, pushPage will call route on the currently visible page. Here'
 
 You test your data for the ID fetched from the link, and return an event page when you find a match.
 
-How about 404 handling? What if you didn't find an event with the ID passed, in effect returning undefined from your route function?
+You can go back one page too.
+
+   n.popPage();
+
+You might what to have an absolute way of going back.
+
+   n.popPage();
+   n.gotoPage(myRootPage); // Safer
+
+TODO:
+
+404 handling
