@@ -4,7 +4,7 @@ function assertOnlyChild(target, element) {
 }
 
 function assertNavigatedTo(navstack, expected) {
-    assert(navstack instanceof Navstack, "Expected Navstack instance");
+    assert(navstack instanceof window.Navstack, "Expected Navstack instance");
     assert(navstack.onNavigate.calledOnce, "Expected onNavigate to be called");
     assert.equals(navstack.onNavigate.getCall(0).args[0], expected, "onNavigate");
 }
@@ -20,7 +20,7 @@ buster.assertions.add("pageNavigatedTo", {
 buster.assertions.add("pageRoutedTo", {
     assert: function (page, expected) {
         this.wtf = expected;
-        return page.route.getCall(0).args[0] == expected;
+        return page.route.getCall(0).args[0] === expected;
     },
     assertMessage: "Expected page to be routed to ${wtf}"
 });
@@ -34,7 +34,7 @@ buster.assertions.add("pagePrepared", {
 
 buster.assertions.add("pageHasGeneratedElement", {
     assert: function (page) {
-        return page.element instanceof Element;
+        return page.element instanceof window.Element;
     },
     assertMessage: "Expected page to have element generated",
     refuteMessage: "Expected page to NOT have element generated"

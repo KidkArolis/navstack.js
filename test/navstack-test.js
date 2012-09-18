@@ -1,4 +1,8 @@
 (function () {
+
+    var assertNavigatedTo = window.assertNavigatedTo;
+    var assertOnlyChild = window.assertOnlyChild;
+
     function getDefaultCreateElement() {
         return sinon.spy.create(function () {
             return document.createElement("div");
@@ -8,7 +12,7 @@
     buster.testCase("navstack", {
         setUp: function () {
             this.target = document.createElement("div");
-            this.n = new Navstack();
+            this.n = new window.Navstack();
             this.n.onNavigate = this.stub();
         },
 
@@ -117,7 +121,7 @@
                         return page2;
                     }),
                     onNavigatedTo: this.spy(),
-                    prepare: this.spy(),
+                    prepare: this.spy()
                 };
                 var page2 = {
                     createElement: getDefaultCreateElement(),
@@ -163,11 +167,11 @@
                     createElement: getDefaultCreateElement(),
                     prepare: prepareFunc,
                     route: function () { return page2; }
-                }
+                };
                 var page2 = {
                     createElement: getDefaultCreateElement(),
                     prepare: prepareFunc
-                }
+                };
 
                 this.n.navigate("/foo/bar");
 
@@ -185,12 +189,12 @@
                     },
                     route: function () { return page1; },
                     onNavigatedTo: this.spy()
-                }
+                };
                 var page1 = {
                     createElement: getDefaultCreateElement(),
                     prepare: this.spy(),
-                    onNavigatedTo: this.spy(),
-                }
+                    onNavigatedTo: this.spy()
+                };
 
                 this.n.navigate("/foo");
                 assertNavigatedTo(this.n, "/");
@@ -209,12 +213,12 @@
                     },
                     route: function () { return page1; },
                     onNavigatedTo: this.spy()
-                }
+                };
                 var page1 = {
                     createElement: getDefaultCreateElement(),
                     prepare: this.spy(),
-                    onNavigatedTo: this.spy(),
-                }
+                    onNavigatedTo: this.spy()
+                };
 
                 this.n.navigate("/foo");
                 assertNavigatedTo(this.n, "/");
@@ -230,11 +234,11 @@
                     target: this.target,
                     route: function () { return page1; },
                     onNavigatedAway: this.spy()
-                }
+                };
                 var page1 = {
                     createElement: getDefaultCreateElement(),
                     onNavigatedAway: this.spy()
-                }
+                };
 
                 this.n.navigate("/");
                 refute.called(this.n.rootPage.onNavigatedAway);
@@ -268,8 +272,7 @@
                     var page1 = {
                         createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy(),
-                        prepare: this.spy(),
-                        onNavigatedTo: this.spy()
+                        prepare: this.spy()
                     };
 
                     this.n.navigate("/");
@@ -304,7 +307,6 @@
                         createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy(),
                         prepare: this.spy(),
-                        onNavigatedTo: this.spy(),
                         onNavigatedAway: this.spy()
                     };
 
@@ -334,8 +336,7 @@
                             return page2;
                         }),
                         onNavigatedTo: this.spy(),
-                        prepare: this.spy(),
-                        onNavigatedTo: this.spy()
+                        prepare: this.spy()
                     };
                     var page2 = {
                         createElement: getDefaultCreateElement(),
@@ -383,8 +384,7 @@
                             return page2;
                         }),
                         onNavigatedTo: this.spy(),
-                        prepare: this.spy(),
-                        onNavigatedTo: this.spy()
+                        prepare: this.spy()
                     };
                     var page2 = {
                         createElement: getDefaultCreateElement(),
@@ -403,7 +403,7 @@
                 },
 
                 "// relative pop": function () {
-                },
+                }
             },
 
             "to abstract root page": function () {
@@ -423,8 +423,7 @@
                 var page1 = {
                     createElement: getDefaultCreateElement(),
                     onNavigatedTo: this.spy(),
-                    prepare: this.spy(),
-                    onNavigatedTo: this.spy()
+                    prepare: this.spy()
                 };
 
                 this.n.navigate("/");
@@ -490,27 +489,27 @@
                         target: this.target,
                         route: function () { return this.page1; }.bind(this),
                         onNavigatedTo: this.spy()
-                    }
+                    };
 
                     this.page1 = {
                         name: "PAGE1",
                         createElement: getDefaultCreateElement(),
                         route: function () { return this.page2; }.bind(this),
                         onNavigatedTo: this.spy()
-                    }
+                    };
 
                     this.page2 = {
                         name: "PAGE2",
                         createElement: getDefaultCreateElement(),
                         route: function () { return this.page3; }.bind(this),
                         onNavigatedTo: this.spy()
-                    }
+                    };
 
                     this.page3 = {
                         name: "PAGE3",
                         createElement: getDefaultCreateElement(),
                         onNavigatedTo: this.spy()
-                    }
+                    };
                 },
 
                 "current page does nothing": function () {
