@@ -25,7 +25,6 @@
 
             if (this._stack) {
                 for (var i = 0; i < this._stack.length; i++) {
-                    console.log("calling with true");
                     this._willNavigateAway({
                         up: true
                     });
