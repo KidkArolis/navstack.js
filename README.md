@@ -1,3 +1,16 @@
+## CHANGELOG
+
+### 0.2
+
+  - AMD support
+  - onNavigatedAway is passed a direction object, e.g {up: true}. This is useful for knowing whether the page should be cleaned up, or whether it should keep the state around, because we're navigating deeper into the state tree
+  - when navigating to a different subtree using navigate(), pop each one of the old pages to call appropriate events for cleanup
+  - include .jshintrc file in the repo for easier collaboration on code
+
+### 0.1
+
+  - original navstack
+
 navstack.js
 ===========
 

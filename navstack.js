@@ -1,32 +1,41 @@
 /**
- * Navstack.js 0.1.0
+ * Navstack.js 0.2.0
  * http://github.com/augustl/navstack.js
  *
  * Licensed under the revised BSD license: http://www.opensource.org/licenses/BSD-3-Clause
  * August Lilleaas <august@augustl.com>
  */
-(function (GLOBAL) {
-    var Navstack = function () {}
+(function () {
+    var Navstack = function () {};
 
     Navstack.getPageElement = function (page) {
         return page.element || (page.element = page.createElement());
-    }
+    };
 
     Navstack.prototype = {
         navigate: function (path) {
             var self = this;
             path = path.slice(1);
             var pathSegments;
-            if (path.length == 0) {
+            if (path.length === 0) {
                 pathSegments = [];
             } else {
                 pathSegments = path.split("/");
             }
 
-            this._willNavigateAway();
+            if (this._stack) {
+                for (var i = 0; i < this._stack.length; i++) {
+                    console.log("calling with true");
+                    this._willNavigateAway({
+                        up: true
+                    });
+                    this._stack.pop();
+                }
+            }
+
             pathSegments.unshift(null);
             this._stack = [{page: {route: function () { return self.rootPage; }}}];
-
+            
             navigateIter(pathSegments, this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
@@ -43,15 +52,22 @@
         },
 
         pushPathSegmentRelative: function (pathSegment, page) {
-            this._willNavigateAway();
-
             var self = this;
             var stack = [];
             for (var i = 0, ii = this._stack.length; i < ii; i++) {
                 var stackItem = this._stack[i];
                 stack.push(stackItem);
-                if (stackItem.page === page) break;
+                if (stackItem.page === page) {
+                    break;
+                }
             }
+
+            var stackLengthBefore = this._stack.length;
+            var stackLengthAfter = stack.length;
+            this._willNavigateAway({
+                up: (stackLengthAfter < stackLengthBefore)
+            });
+
             this._stack = stack;
 
             navigateIter([pathSegment], this._stack, function () {
@@ -61,8 +77,12 @@
         },
 
         popPage: function () {
-            if (this._stack.length === 2) return;
-            this._willNavigateAway();
+            if (this._stack.length === 2) {
+                return;
+            }
+            this._willNavigateAway({
+                up: true
+            });
             this._stack.pop();
             this._renderStack();
             this._didNavigate();
@@ -83,7 +103,9 @@
                 return;
             }
 
-            this._willNavigateAway();
+            this._willNavigateAway({
+                up: true
+            });
             this._stack = this._stack.slice(0, this._stack.indexOf(targetStackItem) + 1);
             this._renderStack();
             this._didNavigate();
@@ -107,32 +129,47 @@
                 var targetPage = pageGroup[0];
                 var target = targetPage.target;
                 var sourcePage = pageGroup[pageGroup.length - 1];
-                if (pageIsAbstract(sourcePage)) continue;
+                if (pageIsAbstract(sourcePage)) {
+                    continue;
+                }
 
                 var element = Navstack.getPageElement(sourcePage);
-                if (target.firstChild === element) continue;
+                if (target.firstChild === element) {
+                    continue;
+                }
                 target.innerHTML = "";
                 target.appendChild(element);
             }
         },
 
         _didNavigate: function () {
-            this.onNavigate && this.onNavigate(this.currentPath());
+            if (this.onNavigate) {
+                this.onNavigate(this.currentPath());
+            }
 
             var topStackItem = this._stack[this._stack.length - 1];
             var page = topStackItem.page;
-            page.onNavigatedTo && page.onNavigatedTo();
+            if (page.onNavigatedTo) {
+                page.onNavigatedTo();
+            }
         },
 
-        _willNavigateAway: function () {
-            if (!this._stack) return;
+        _willNavigateAway: function (direction) {
+            direction = direction || {
+                up: false
+            };
+            if (!this._stack) {
+                return;
+            }
             var topPage = this._stack[this._stack.length - 1].page;
-            topPage.onNavigatedAway && topPage.onNavigatedAway();
+            if (topPage.onNavigatedAway) {
+                topPage.onNavigatedAway(direction);
+            }
         }
     };
 
     function navigateIter(pathSegments, stack, done) {
-        if (pathSegments.length == 0) {
+        if (pathSegments.length === 0) {
             return done();
         }
 
@@ -141,8 +178,11 @@
         var newPage = topStackItem.page.route(pathSegment);
         var newStackItem = {page: newPage, pathSegment: pathSegment};
         stack.push(newStackItem);
+
         loadPage(newPage, function (status) {
-            if (!pageIsAbstract(newPage)) Navstack.getPageElement(newPage);
+            if (!pageIsAbstract(newPage)) {
+                Navstack.getPageElement(newPage);
+            }
 
             if (status === false) {
                 done(stack);
@@ -154,7 +194,7 @@
 
     function loadPage(page, done) {
         if ("prepare" in page) {
-            if (page.prepare.length == 0) {
+            if (page.prepare.length === 0) {
                 done(page.prepare());
             } else {
                 page.prepare(done);
@@ -188,5 +228,13 @@
         return !("createElement" in page);
     }
 
-    GLOBAL.Navstack = Navstack
-}(window));
+    // Expose Navstack to the global object
+    window.Navstack = Navstack;
+
+    // Expose Navstack as an AMD module
+    if (typeof define === "function" && define.amd) {
+        define([], function () {
+            return Navstack;
+        });
+    }
+})();

@@ -249,12 +249,70 @@
                 refute.called(page1.onNavigatedAway);
 
                 this.n.navigate("/");
-                assert.calledOnce(this.n.rootPage.onNavigatedAway);
+                assert.calledTwice(this.n.rootPage.onNavigatedAway);
                 assert.calledOnce(page1.onNavigatedAway);
 
                 this.n.navigate("/foo");
-                assert.calledTwice(this.n.rootPage.onNavigatedAway);
+                assert.calledThrice(this.n.rootPage.onNavigatedAway);
                 assert.calledOnce(page1.onNavigatedAway);
+            },
+
+            "navigate away is called with a direction object": function () {
+                this.n.rootPage = {
+                    createElement: getDefaultCreateElement(),
+                    route: function () {
+                        return page1;
+                    },
+                    target: this.target,
+                    onNavigatedAway: this.spy()
+                };
+                var page1 = {
+                    createElement: getDefaultCreateElement(),
+                    route: function () {
+                        return page2;
+                    },
+                    onNavigatedAway: this.spy()
+                };
+                var page2 = {
+                    createElement: getDefaultCreateElement(),
+                    onNavigatedAway: this.spy()
+                };
+
+                // there is nothing on the stack yet
+                this.n.navigate("/");
+                refute.called(this.n.rootPage.onNavigatedAway);
+                refute.called(page1.onNavigatedAway);
+                refute.called(page2.onNavigatedAway);
+
+                this.n.pushPathSegment("foo");
+                assert.calledWith(this.n.rootPage.onNavigatedAway, {
+                    up: false
+                });
+
+                this.n.pushPathSegment("bar");
+                assert.calledWith(page1.onNavigatedAway, {
+                    up: false
+                });
+
+                this.n.popPage();
+                assert.calledWith(page2.onNavigatedAway, {
+                    up: true
+                });
+
+                this.n.popPage();
+                assert.calledWith(page1.onNavigatedAway, {
+                    up: true
+                });
+
+                // TODO how this should behave?
+                // this.n.popPage();
+                // assert.calledWith(this.n.rootPage.onNavigatedAway, {
+                //     up: false
+                // });
+            },
+
+            "// onNavigatedAway is called with direction object in all cases": function () {
+
             },
 
             "step by step": {
