@@ -372,15 +372,15 @@
                 refute.called(page1.onNavigatedAway);
 
                 this.n.navigate("/foo");
-                assert.calledOnce(this.n.rootPage.onNavigatedAway);
+                refute.called(this.n.rootPage.onNavigatedAway);
                 refute.called(page1.onNavigatedAway);
 
                 this.n.navigate("/");
-                assert.calledTwice(this.n.rootPage.onNavigatedAway);
+                refute.called(this.n.rootPage.onNavigatedAway);
                 assert.calledOnce(page1.onNavigatedAway);
 
                 this.n.navigate("/foo");
-                assert.calledThrice(this.n.rootPage.onNavigatedAway);
+                refute.called(this.n.rootPage.onNavigatedAway);
                 assert.calledOnce(page1.onNavigatedAway);
             },
 
@@ -446,6 +446,54 @@
 
             "// onNavigatedAway is called with direction object in all cases": function () {
 
+            },
+
+            "pop as little as possible when navigating away": function () {
+                this.n.rootPage = {
+                    createElement: getDefaultCreateElement(),
+                    target: this.target,
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () { return page1; },
+                    onNavigatedAway: this.spy()
+                };
+                var page1 = {
+                    createElement: getDefaultCreateElement(),
+                    routes: {
+                        "/bar": "routeBar",
+                        "/baz": "routeBaz"
+                    },
+                    routeBar: function () { return page2; },
+                    routeBaz: function () { return page3; },
+                    onNavigatedAway: this.spy()
+                };
+                var page2 = {
+                    createElement: getDefaultCreateElement(),
+                    onNavigatedAway: this.spy()
+                };
+                var page3 = {
+                    createElement: getDefaultCreateElement(),
+                    onNavigatedAway: this.spy()
+                };
+
+                this.n.navigate("/foo/bar");
+                refute.called(this.n.rootPage.onNavigatedAway);
+                refute.called(page1.onNavigatedAway);
+                refute.called(page2.onNavigatedAway);
+                refute.called(page3.onNavigatedAway);
+
+                this.n.navigate("/foo/baz");
+                refute.called(this.n.rootPage.onNavigatedAway);
+                refute.called(page1.onNavigatedAway);
+                assert.calledOnce(page2.onNavigatedAway);
+                refute.called(page3.onNavigatedAway);
+
+                this.n.navigate("/foo/baz");
+                refute.called(this.n.rootPage.onNavigatedAway);
+                refute.called(page1.onNavigatedAway);
+                assert.calledOnce(page2.onNavigatedAway);
+                refute.called(page3.onNavigatedAway);
             },
 
             "step by step": {
