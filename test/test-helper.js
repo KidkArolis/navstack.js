@@ -20,7 +20,8 @@ buster.assertions.add("pageNavigatedTo", {
 buster.assertions.add("pageRoutedTo", {
     assert: function (page, expected) {
         this.wtf = expected;
-        return page.route.getCall(0).args[0] === expected;
+        var routeHandler = page[page.routes[expected]];
+        return routeHandler.calledOnce;
     },
     assertMessage: "Expected page to be routed to ${wtf}"
 });
