@@ -1,5 +1,9 @@
 ## CHANGELOG
 
+### 0.3.1
+
+  - when calling navigate(), pop pages from the stack only until the desired path and current path start overlapping. This way, the bottom views in the stack can stay in the dom, etc. they don't need to be rerendered.
+
 ### 0.3
 
   - routing now happens not via page.route function, but by reading page.routes hash
