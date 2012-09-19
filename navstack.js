@@ -6,6 +6,11 @@
  * August Lilleaas <august@augustl.com>
  */
 (function () {
+
+    var routeStripper = /^[#\/]/;
+    var namedParam = /:(\w+)/g;
+    var escapeRegExp = /[-[\]{}()+?.,\\^$|#\s]/g;
+
     var Navstack = function () {};
 
     Navstack.getPageElement = function (page) {
@@ -15,13 +20,6 @@
     Navstack.prototype = {
         navigate: function (path) {
             var self = this;
-            path = path.slice(1);
-            var pathSegments;
-            if (path.length === 0) {
-                pathSegments = [];
-            } else {
-                pathSegments = path.split("/");
-            }
 
             if (this._stack) {
                 for (var i = 0; i < this._stack.length; i++) {
@@ -32,10 +30,19 @@
                 }
             }
 
-            pathSegments.unshift(null);
-            this._stack = [{page: {route: function () { return self.rootPage; }}}];
+            this._stack = [{
+                page: {
+                    routes: {
+                        "/": "handleRoute"
+                    },
+                    handleRoute: function () {
+                        return self.rootPage;
+                    }
+                },
+                pathSegment: ""
+            }];
             
-            navigateIter(pathSegments, this._stack, function () {
+            navigateIter(path, this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -44,7 +51,7 @@
         pushPathSegment: function (pathSegment) {
             var self = this;
             this._willNavigateAway();
-            navigateIter([pathSegment], this._stack, function () {
+            navigateIter(pathSegment, this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -69,7 +76,7 @@
 
             this._stack = stack;
 
-            navigateIter([pathSegment], this._stack, function () {
+            navigateIter(pathSegment, this._stack, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -154,28 +161,121 @@
         },
 
         _willNavigateAway: function (direction) {
-            direction = direction || {
-                up: false
-            };
             if (!this._stack) {
                 return;
             }
+            direction = direction || {
+                up: false
+            };
             var topPage = this._stack[this._stack.length - 1].page;
             if (topPage.onNavigatedAway) {
                 topPage.onNavigatedAway(direction);
             }
+        },
+
+        _matchRoutePattern: function (path, route) {
+            var paramNames = [];
+
+            var addParamName = function (match, paramName) {
+                paramNames.push(paramName);
+                // Backbone uses "([^\/]+)"
+                // This one is from Chaplin
+                return "([\\w-]+)";
+            };
+
+            route = route
+                .replace(escapeRegExp, "\\$&")
+                .replace(namedParam, addParamName);
+            var re = new RegExp("^" + route);
+
+            var match = re.exec("/" + path);
+            if (match) {
+
+                var paramsArr = match.slice(1);
+                var params = {};
+                for (var i = 0, len = paramsArr.length; i < len; i++) {
+                    var paramName = paramNames[i];
+                    params[paramName] = paramsArr[i];
+                }
+
+                return {
+                    pathSegment: match[0].substr(1),
+                    params: params
+                };
+            }
+
+            return false;
+        },
+
+        // return all info about matching the route
+        //  * the route handler function
+        //  * the pathSegment (which is a substring of the path)
+        //  * params extracted from the path
+        _findMatchingRoute: function (path, page) {
+            var pathSegment, routeHandler, params;
+
+            // if page has no routes, we won't find any handlers
+            if (!page.routes) {
+                return false;
+            }
+
+            var result = false;
+            for (var key in page.routes) {
+                if (page.routes.hasOwnProperty(key)) {
+                    var routePattern = key;
+
+                    // skip special index route for now
+                    if (routePattern === "/") {
+                        break;
+                    }
+
+                    var match = Navstack.prototype._matchRoutePattern(path, routePattern);
+                    if (match) {
+                        result = {
+                            routeHandler: page[page.routes[routePattern]],
+                            pathSegment: match.pathSegment,
+                            params: match.params
+                        };
+                    }
+                }
+            }
+
+            if (!result && page.routes["/"]) {
+                result = {
+                    routeHandler: page[page.routes["/"]],
+                    pathSegment: "",
+                    params: {}
+                };
+            }
+
+            return result;
         }
     };
 
-    function navigateIter(pathSegments, stack, done) {
-        if (pathSegments.length === 0) {
+    function navigateIter(path, stack, done) {
+        path = path.replace(routeStripper, "");
+
+        // something we need to do to render the root page
+        var firstIteration = stack.length === 1;
+        if (!firstIteration && path.length === 0) {
             return done();
         }
 
         var topStackItem = stack[stack.length - 1];
-        var pathSegment = pathSegments[0];
-        var newPage = topStackItem.page.route(pathSegment);
-        var newStackItem = {page: newPage, pathSegment: pathSegment};
+        
+        var match = Navstack.prototype._findMatchingRoute(path, topStackItem.page);
+        if (!match) {
+            // TODO this should be handled better
+            // This probably won't work well with async prepares?
+            // 404 situation
+            throw "No matching route found";
+        }
+
+        var newPage = match.routeHandler.call(topStackItem.page, match.params);
+        var newStackItem = {
+            page: newPage,
+            pathSegment: match.pathSegment
+        };
         stack.push(newStackItem);
 
         loadPage(newPage, function (status) {
@@ -186,7 +286,7 @@
             if (status === false) {
                 done(stack);
             } else {
-                navigateIter(pathSegments.slice(1), stack, done);
+                navigateIter(path.substr(match.pathSegment.length), stack, done);
             }
         });
     }
@@ -226,6 +326,8 @@
     function pageIsAbstract(page) {
         return !("createElement" in page);
     }
+
+
 
     // Expose Navstack to the global object
     window.Navstack = Navstack;
