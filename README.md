@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+### 0.3
+
+  - routing now happens not via page.route function, but by reading page.routes hash
+  - page.routes hash can contain parameterized routes (e.g. /posts/:post_id)
+  - a single route pattern can contain multiple slashes in it
+
 ### 0.2
 
   - AMD support
