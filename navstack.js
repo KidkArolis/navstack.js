@@ -23,6 +23,10 @@
 
             if (this._stack) {
                 for (var i = 0; i < this._stack.length; i++) {
+                    var currentPath = this.currentPath();
+                    if (path.substr(0, currentPath.length) === currentPath) {
+                        break;
+                    }
                     this._willNavigateAway({
                         up: true
                     });
