@@ -41,7 +41,10 @@
             "to plain page via root page": function () {
                 this.n.rootPage = {
                     createElement: getDefaultCreateElement(),
-                    route: this.spy(function () {
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: this.spy(function () {
                         return page1;
                     }),
                     target: this.target,
@@ -61,7 +64,7 @@
                 this.n.navigate("/foo");
 
                 assertNavigatedTo(this.n, "/foo");
-                assert.pageRoutedTo(this.n.rootPage, "foo");
+                assert.pageRoutedTo(this.n.rootPage, "/foo");
                 refute.pageNavigatedTo(this.n.rootPage);
                 assert.pageNavigatedTo(page1);
                 assert.pagePrepared(this.n.rootPage);
@@ -75,7 +78,10 @@
             "to page with its own element": function () {
                 this.n.rootPage = {
                     createElement: getDefaultCreateElement(),
-                    route: this.spy(function () {
+                    routes: {
+                        "/boom": "routeBoom"
+                    },
+                    routeBoom: this.spy(function () {
                         return page1;
                     }),
                     target: this.target,
@@ -93,7 +99,7 @@
                 this.n.navigate("/boom");
 
                 assertNavigatedTo(this.n, "/boom");
-                assert.pageRoutedTo(this.n.rootPage, "boom");
+                assert.pageRoutedTo(this.n.rootPage, "/boom");
                 refute.pageNavigatedTo(this.n.rootPage);
                 assert.pageNavigatedTo(page1);
                 assert.pagePrepared(this.n.rootPage);
@@ -108,7 +114,10 @@
             "to subpage": function () {
                 this.n.rootPage = {
                     createElement: getDefaultCreateElement(),
-                    route: this.spy(function () {
+                    routes: {
+                        "/wakka": "routeWakka"
+                    },
+                    routeWakka: this.spy(function () {
                         return page1;
                     }),
                     target: this.target,
@@ -117,7 +126,10 @@
                 };
                 var page1 = {
                     createElement: getDefaultCreateElement(),
-                    route: this.spy(function () {
+                    routes: {
+                        "/shakka": "routeShakka"
+                    },
+                    routeShakka: this.spy(function () {
                         return page2;
                     }),
                     onNavigatedTo: this.spy(),
@@ -133,8 +145,8 @@
                 this.n.navigate("/wakka/shakka");
 
                 assertNavigatedTo(this.n, "/wakka/shakka");
-                assert.pageRoutedTo(this.n.rootPage, "wakka");
-                assert.pageRoutedTo(page1, "shakka");
+                assert.pageRoutedTo(this.n.rootPage, "/wakka");
+                assert.pageRoutedTo(page1, "/shakka");
                 refute.pageNavigatedTo(this.n.rootPage);
                 refute.pageNavigatedTo(page1);
                 assert.pageNavigatedTo(page2);
@@ -150,6 +162,106 @@
                 assert.equals(this.n.currentPath(), "/wakka/shakka");
             },
 
+            "to a page with a parameter": function () {
+                this.n.rootPage = {
+                    createElement: getDefaultCreateElement(),
+                    routes: {
+                        "/foo/:bar": "routeFoo"
+                    },
+                    routeFoo: this.spy(function () {
+                        return page1;
+                    }),
+                    target: this.target,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                var actualElement = document.createElement("div");
+                var page1 = {
+                    createElement: function () {
+                        return actualElement;
+                    },
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                this.n.navigate("/foo/123");
+
+                assertNavigatedTo(this.n, "/foo/123");
+                assert.pageRoutedTo(this.n.rootPage, "/foo/:bar");
+                refute.pageNavigatedTo(this.n.rootPage);
+                assert.pageNavigatedTo(page1);
+                assert.pagePrepared(this.n.rootPage);
+                assert.pagePrepared(page1);
+                assertOnlyChild(this.target, actualElement);
+                assert.pageHasGeneratedElement(this.n.rootPage);
+                assert.pageHasGeneratedElement(page1);
+                assert.equals(this.n.currentPath(), "/foo/123");
+                assert.calledWith(this.n.rootPage.routeFoo, {
+                    "bar": "123"
+                });
+            },
+
+            "to nested pages with parameters": function () {
+                this.n.rootPage = {
+                    createElement: getDefaultCreateElement(),
+                    routes: {
+                        "/posts/:id": "routePosts"
+                    },
+                    routePosts: this.spy(function () {
+                        return page1;
+                    }),
+                    target: this.target,
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                var page1 = {
+                    createElement: getDefaultCreateElement(),
+                    routes: {
+                        "/:section/:action/dummy": "routeSection"
+                    },
+                    routeSection: this.spy(function () {
+                        return page2;
+                    }),
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                var actualElement = document.createElement("div");
+                var page2 = {
+                    createElement: function () {
+                        return actualElement;
+                    },
+                    onNavigatedTo: this.spy(),
+                    prepare: this.spy()
+                };
+
+                this.n.navigate("/posts/123/comments/new/dummy");
+
+                assertNavigatedTo(this.n, "/posts/123/comments/new/dummy");
+                assert.pageRoutedTo(this.n.rootPage, "/posts/:id");
+                assert.pageRoutedTo(page1, "/:section/:action/dummy");
+                refute.pageNavigatedTo(this.n.rootPage);
+                refute.pageNavigatedTo(page1);
+                assert.pageNavigatedTo(page2);
+                assert.pagePrepared(this.n.rootPage);
+                assert.pagePrepared(page1);
+                assert.pagePrepared(page2);
+                assertOnlyChild(this.target, actualElement);
+                assert.pageHasGeneratedElement(this.n.rootPage);
+                assert.pageHasGeneratedElement(page1);
+                assert.pageHasGeneratedElement(page2);
+                assert.equals(this.n.currentPath(), "/posts/123/comments/new/dummy");
+                assert.calledWith(this.n.rootPage.routePosts, {
+                    "id": "123"
+                });
+                assert.calledWith(page1.routeSection, {
+                    "section": "comments",
+                    "action": "new"
+                });
+            },
+
             "current path while building": function () {
                 var self = this;
 
@@ -161,12 +273,18 @@
                     createElement: getDefaultCreateElement(),
                     target: this.target,
                     prepare: prepareFunc,
-                    route: function () { return page1; }
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () { return page1; }
                 };
                 var page1 = {
                     createElement: getDefaultCreateElement(),
                     prepare: prepareFunc,
-                    route: function () { return page2; }
+                    routes: {
+                        "/bar": "routeBar"
+                    },
+                    routeBar: function () { return page2; }
                 };
                 var page2 = {
                     createElement: getDefaultCreateElement(),
@@ -187,7 +305,10 @@
                     prepare: function () {
                         return false;
                     },
-                    route: function () { return page1; },
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () { return page1; },
                     onNavigatedTo: this.spy()
                 };
                 var page1 = {
@@ -211,7 +332,10 @@
                     prepare: function (done) {
                         done(false);
                     },
-                    route: function () { return page1; },
+                    routes: {
+                        "foo": "routeFoo"
+                    },
+                    routeFoo: function () { return page1; },
                     onNavigatedTo: this.spy()
                 };
                 var page1 = {
@@ -232,7 +356,10 @@
                 this.n.rootPage = {
                     createElement: getDefaultCreateElement(),
                     target: this.target,
-                    route: function () { return page1; },
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () { return page1; },
                     onNavigatedAway: this.spy()
                 };
                 var page1 = {
@@ -260,7 +387,10 @@
             "navigate away is called with a direction object": function () {
                 this.n.rootPage = {
                     createElement: getDefaultCreateElement(),
-                    route: function () {
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () {
                         return page1;
                     },
                     target: this.target,
@@ -268,7 +398,10 @@
                 };
                 var page1 = {
                     createElement: getDefaultCreateElement(),
-                    route: function () {
+                    routes: {
+                        "/bar": "routeBar"
+                    },
+                    routeBar: function () {
                         return page2;
                     },
                     onNavigatedAway: this.spy()
@@ -319,7 +452,10 @@
                 "pushing from root": function () {
                     this.n.rootPage = {
                         createElement: getDefaultCreateElement(),
-                        route: this.spy(function () {
+                        routes: {
+                            "/boom": "routeBoom"
+                        },
+                        routeBoom: this.spy(function () {
                             return page1;
                         }),
                         target: this.target,
@@ -339,7 +475,7 @@
                     this.n.pushPathSegment("boom");
 
                     assertNavigatedTo(this.n, "/boom");
-                    assert.pageRoutedTo(this.n.rootPage, "boom");
+                    assert.pageRoutedTo(this.n.rootPage, "/boom");
                     assert.pageNavigatedTo(this.n.rootPage);
                     assert.pageNavigatedTo(page1);
                     assert.pagePrepared(this.n.rootPage);
@@ -353,7 +489,10 @@
                 "popping from page": function () {
                     this.n.rootPage = {
                         createElement: getDefaultCreateElement(),
-                        route: this.spy(function () {
+                        routes: {
+                            "/boom": "routeBoom"
+                        },
+                        routeBoom: this.spy(function () {
                             return page1;
                         }),
                         target: this.target,
@@ -381,7 +520,10 @@
                 "popping to unrendered page": function () {
                     this.n.rootPage = {
                         createElement: getDefaultCreateElement(),
-                        route: this.spy(function () {
+                        routes: {
+                            "/foo": "routeFoo"
+                        },
+                        routeFoo: this.spy(function () {
                             return page1;
                         }),
                         target: this.target,
@@ -390,7 +532,10 @@
                     };
                     var page1 = {
                         createElement: getDefaultCreateElement(),
-                        route: this.spy(function () {
+                        routes: {
+                            "/bar": "routeBar"
+                        },
+                        routeBar: this.spy(function () {
                             return page2;
                         }),
                         onNavigatedTo: this.spy(),
@@ -429,7 +574,10 @@
                 "relative push": function () {
                     this.n.rootPage = {
                         createElement: getDefaultCreateElement(),
-                        route: this.spy(function () {
+                        routes: {
+                            "/foo": "routeFoo"
+                        },
+                        routeFoo: this.spy(function () {
                             return page1;
                         }),
                         target: this.target,
@@ -438,7 +586,10 @@
                     };
                     var page1 = {
                         createElement: getDefaultCreateElement(),
-                        route: this.spy(function () {
+                        routes: {
+                            "/bar": "routeBar"
+                        },
+                        routeBar: this.spy(function () {
                             return page2;
                         }),
                         onNavigatedTo: this.spy(),
@@ -468,7 +619,10 @@
                 var self = this;
 
                 this.n.rootPage = {
-                    route: this.spy(function () {
+                    routes: {
+                        "/blaz": "routeBlaz"
+                    },
+                    routeBlaz: this.spy(function () {
                         return page1;
                     }),
                     target: this.target,
@@ -487,7 +641,7 @@
                 this.n.navigate("/");
                 assert.calledTwice(this.n.onNavigate);
                 assert.calledWithExactly(this.n.onNavigate, "/blaz");
-                assert.pageRoutedTo(this.n.rootPage, "blaz");
+                assert.pageRoutedTo(this.n.rootPage, "/blaz");
                 assert.pageNavigatedTo(this.n.rootPage);
                 assert.pageNavigatedTo(page1);
                 assert.pagePrepared(this.n.rootPage),
@@ -503,12 +657,18 @@
                 this.n.rootPage = {
                     createElement: getDefaultCreateElement(),
                     target: this.target,
-                    route: function () { return eventsListPage; }
+                    routes: {
+                        "/events": "routeEvents"
+                    },
+                    routeEvents: function () { return eventsListPage; }
                 };
 
                 var eventsListPage = {
                     createElement: getDefaultCreateElement(),
-                    route: function () { return eventPage; }
+                    routes: {
+                        "/123": "route123"
+                    },
+                    route123: function () { return eventPage; }
                 };
 
                 var eventPage = {
@@ -518,7 +678,10 @@
                         element.appendChild(this.eventAttendantsPageTarget);
                         return element;
                     }),
-                    route: function () {
+                    routes: {
+                        "/attendants": "routeAttendants"
+                    },
+                    routeAttendants: function () {
                         eventAttendantsPage.target = this.eventAttendantsPageTarget;
                         return eventAttendantsPage;
                     }
@@ -545,21 +708,30 @@
                         name: "ROOT",
                         createElement: getDefaultCreateElement(),
                         target: this.target,
-                        route: function () { return this.page1; }.bind(this),
+                        routes: {
+                            "/foo": "routeFoo"
+                        },
+                        routeFoo: function () { return this.page1; }.bind(this),
                         onNavigatedTo: this.spy()
                     };
 
                     this.page1 = {
                         name: "PAGE1",
                         createElement: getDefaultCreateElement(),
-                        route: function () { return this.page2; }.bind(this),
+                        routes: {
+                            "/bar": "routeBar"
+                        },
+                        routeBar: function () { return this.page2; }.bind(this),
                         onNavigatedTo: this.spy()
                     };
 
                     this.page2 = {
                         name: "PAGE2",
                         createElement: getDefaultCreateElement(),
-                        route: function () { return this.page3; }.bind(this),
+                        routes: {
+                            "/baz": "routeBaz"
+                        },
+                        routeBaz: function () { return this.page3; }.bind(this),
                         onNavigatedTo: this.spy()
                     };
 
@@ -595,6 +767,115 @@
                         this.n.gotoPage({});
                     }.bind(this));
                 }
+            }
+        },
+
+        "_findMatchingRoute": {
+            setUp: function () {
+                this._findMatchingRoute = window.Navstack.prototype._findMatchingRoute;
+            },
+
+            "empty path and empty page doesn't match": function () {
+                var match = this._findMatchingRoute("", {});
+                assert.equals(match, false);
+            },
+
+            "long path and empty page doesn't match": function () {
+                var match = this._findMatchingRoute("/some/path", {});
+                assert.equals(match, false);
+            },
+
+            "empty path and page with index matches": function () {
+                var page = {
+                    routes: {
+                        "/": "routeIndex"
+                    },
+                    routeIndex: function () {}
+                };
+                var match = this._findMatchingRoute("", page);
+                assert.equals(match, {
+                    routeHandler: page.routeIndex,
+                    pathSegment: "",
+                    params: {}
+                });
+            },
+            "empty path and page with no index doesn't match": function () {
+                var page = {
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () {}
+                };
+                var match = this._findMatchingRoute("", page);
+                refute(match);
+            },
+            "a path and page with no index don't match": function () {
+                var page = {
+                    routes: {
+                        "/foo": "routeFoo"
+                    },
+                    routeFoo: function () {}
+                };
+                var match = this._findMatchingRoute("/bar/baz", page);
+                refute(match);
+            },
+            "a path and page with index match": function () {
+                var page = {
+                    routes: {
+                        "/": "routeIndex",
+                        "/foo": "routeFoo"
+                    },
+                    routeIndex: function () {}
+                };
+                var match = this._findMatchingRoute("/bar/baz", page);
+                assert.equals(match, {
+                    routeHandler: page.routeIndex,
+                    pathSegment: "",
+                    params: {}
+                });
+            }
+        },
+
+        "_matchRoutePattern": {
+            setUp: function () {
+                this.match = window.Navstack.prototype._matchRoutePattern;
+            },
+
+            "empty path and empty route match": function () {
+                var result = this.match("", "");
+                assert.equals(result, {
+                    pathSegment: "",
+                    params: {}
+                });
+            },
+
+            "empty path and non empty route doesn't match": function () {
+                var result = this.match("", "/foo/bar");
+                refute(result);
+            },
+
+            "non matching route returns false": function () {
+                var result = this.match("abc", "/foo/bar");
+                refute(result);
+            },
+
+            "matching route returns pathSegment and empty params": function () {
+                var result = this.match("foo/bar/baz", "/foo/bar");
+                assert.equals(result, {
+                    pathSegment: "foo/bar",
+                    params: {}
+                });
+            },
+
+            "parametrized route returns pathSegment and params": function () {
+                var result = this.match("foo/bar/53/boo", "/foo/:param1/:param2");
+                assert.equals(result, {
+                    pathSegment: "foo/bar/53",
+                    params: {
+                        param1: "bar",
+                        param2: "53"
+                    }
+                });
             }
         },
 
