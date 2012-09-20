@@ -1,5 +1,5 @@
 /**
- * Navstack.js 0.2.0
+ * Navstack.js 0.3.3
  * http://github.com/augustl/navstack.js
  *
  * Licensed under the revised BSD license: http://www.opensource.org/licenses/BSD-3-Clause
