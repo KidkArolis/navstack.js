@@ -24,8 +24,20 @@
             if (this._stack) {
                 for (var i = 0; i < this._stack.length; i++) {
                     var currentPath = this.currentPath();
-                    if (path.substr(0, currentPath.length) === currentPath) {
+                    if (currentPath === "/") {
                         break;
+                    }
+                    var desiredPath = path;
+                    var currentPathArr = currentPath.substr(1).split("/");
+                    var desiredPathArr = desiredPath.substr(1).split("/");
+                    if (currentPathArr.length <= desiredPathArr.length) {
+                        while (desiredPathArr.length > currentPathArr.length) {
+                            desiredPathArr.pop();
+                        }
+                        if (desiredPathArr.join("/") === currentPathArr.join("/")) {
+                            path = path.substr(currentPath.length);
+                            break;
+                        }
                     }
                     this._willNavigateAway({
                         up: true
@@ -34,17 +46,20 @@
                 }
             }
 
-            this._stack = [{
-                page: {
-                    routes: {
-                        "/": "handleRoute"
+            this._stack = this._stack || [];
+            if (this._stack.length === 0) {
+                this._stack = [{
+                    page: {
+                        routes: {
+                            "/": "handleRoute"
+                        },
+                        handleRoute: function () {
+                            return self.rootPage;
+                        }
                     },
-                    handleRoute: function () {
-                        return self.rootPage;
-                    }
-                },
-                pathSegment: ""
-            }];
+                    pathSegment: ""
+                }];
+            }
             
             navigateIter(path, this._stack, function () {
                 self._renderStack();

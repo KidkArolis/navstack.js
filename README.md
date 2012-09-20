@@ -1,4 +1,8 @@
-## CHANGELOG
+## CHANGELOG / JOURNAL :)
+
+### 0.3.2
+
+  - fix the non greedy popping feature. It was resetting the stack to initial version every time. Stop using substrings, that's a problem with routes like /foo/123, /foo/12. The non greedy popping feature is problematic in general, it will never work with routes like "/foo/special_case" and "/foo" + nested "/:param", because when navigating to the former from latter, navstack will only pop up to /foo. Considering getting rid of this feature.
 
 ### 0.3.1
 
