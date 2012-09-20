@@ -245,7 +245,7 @@
 
                     // skip special index route for now
                     if (routePattern === "/") {
-                        break;
+                        continue;
                     }
 
                     var match = Navstack.prototype._matchRoutePattern(path, routePattern);
@@ -274,13 +274,14 @@
     function navigateIter(path, stack, done) {
         path = path.replace(routeStripper, "");
 
+        var topStackItem = stack[stack.length - 1];
+
         // something we need to do to render the root page
         var firstIteration = stack.length === 1;
-        if (!firstIteration && path.length === 0) {
+        if (!firstIteration && path.length === 0 && !topStackItem.page.routes) {
             return done();
         }
 
-        var topStackItem = stack[stack.length - 1];
         
         var match = Navstack.prototype._findMatchingRoute(path, topStackItem.page);
         if (!match) {
