@@ -1,5 +1,9 @@
 ## CHANGELOG / JOURNAL :)
 
+### 0.3.4
+
+  - call renderStack before every loadPage call, this way we render parts of application as it's being prepared and the app has a chance to display loading animations in subviews.
+
 ### 0.3.3
 
   - fix the index (/) route handling. Always open index route if page contains it.

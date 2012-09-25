@@ -63,6 +63,8 @@
             
             navigateIter(path, this._stack, function () {
                 self._renderStack();
+            }, function () {
+                self._renderStack();
                 self._didNavigate();
             });
         },
@@ -71,6 +73,8 @@
             var self = this;
             this._willNavigateAway();
             navigateIter(pathSegment, this._stack, function () {
+                self._renderStack();
+            }, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -96,6 +100,8 @@
             this._stack = stack;
 
             navigateIter(pathSegment, this._stack, function () {
+                self._renderStack();
+            }, function () {
                 self._renderStack();
                 self._didNavigate();
             });
@@ -271,7 +277,7 @@
         }
     };
 
-    function navigateIter(path, stack, done) {
+    function navigateIter(path, stack, renderStack, done) {
         path = path.replace(routeStripper, "");
 
         var topStackItem = stack[stack.length - 1];
@@ -284,6 +290,12 @@
 
         
         var match = Navstack.prototype._findMatchingRoute(path, topStackItem.page);
+        // TODO possible temporary fix for tests, but not for the problem
+        // find a better way to do this. Probably we don't want non leaf states
+        // to be possible like ember? Just need to remember why.
+        // if (!match && path === "") {
+        //     return done();
+        // }
         if (!match) {
             // TODO this should be handled better
             // This probably won't work well with async prepares?
@@ -298,6 +310,7 @@
         };
         stack.push(newStackItem);
 
+        renderStack();
         loadPage(newPage, function (status) {
             if (!pageIsAbstract(newPage)) {
                 Navstack.getPageElement(newPage);
@@ -306,7 +319,7 @@
             if (status === false) {
                 done(stack);
             } else {
-                navigateIter(path.substr(match.pathSegment.length), stack, done);
+                navigateIter(path.substr(match.pathSegment.length), stack, renderStack, done);
             }
         });
     }
