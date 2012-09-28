@@ -24,19 +24,21 @@
             if (this._stack) {
                 for (var i = 0; i < this._stack.length; i++) {
                     var currentPath = this.currentPath();
-                    if (currentPath === "/") {
+                    if (this._stack.length <= 2) {
+                    // if (currentPath === "/") {
                         break;
-                    }
-                    var desiredPath = path;
-                    var currentPathArr = currentPath.substr(1).split("/");
-                    var desiredPathArr = desiredPath.substr(1).split("/");
-                    if (currentPathArr.length <= desiredPathArr.length) {
-                        while (desiredPathArr.length > currentPathArr.length) {
-                            desiredPathArr.pop();
-                        }
-                        if (desiredPathArr.join("/") === currentPathArr.join("/")) {
-                            path = path.substr(currentPath.length);
-                            break;
+                    } else {
+                        var desiredPath = path;
+                        var currentPathArr = currentPath.substr(1).split("/");
+                        var desiredPathArr = desiredPath.substr(1).split("/");
+                        if (currentPathArr.length <= desiredPathArr.length) {
+                            while (desiredPathArr.length > currentPathArr.length) {
+                                desiredPathArr.pop();
+                            }
+                            if (desiredPathArr.join("/") === currentPathArr.join("/")) {
+                                path = path.substr(currentPath.length);
+                                break;
+                            }
                         }
                     }
                     this._willNavigateAway({
