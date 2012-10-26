@@ -1,6 +1,6 @@
 {
   "name": "Navstack",
   "description": "State Machine / Router / Hierarchical View System.",
-  "version": "0.3.3",
+  "version": "0.3.5",
   "amd": {}
 }

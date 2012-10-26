@@ -302,7 +302,12 @@
             // TODO this should be handled better
             // This probably won't work well with async prepares?
             // 404 situation
-            throw "No matching route found";
+            throw {
+                name: "Navstack Error",
+                message: "No matching route found",
+                path: path,
+                currentStack: stack
+            };
         }
 
         var newPage = match.routeHandler.call(topStackItem.page, match.params);

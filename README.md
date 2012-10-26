@@ -1,5 +1,9 @@
 ## CHANGELOG / JOURNAL :)
 
+### 0.3.5
+
+  - more information is provided when "No route matched" exception is thrown
+
 ### 0.3.4
 
   - call renderStack before every loadPage call, this way we render parts of application as it's being prepared and the app has a chance to display loading animations in subviews.
