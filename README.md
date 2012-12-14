@@ -1,5 +1,10 @@
 ## CHANGELOG / JOURNAL :)
 
+### 0.3.6
+
+  - `navigate()` allows additional data to be sent via send parameter
+  - view needs to implement `onReceiveData(data)` function to handle the additional data received.
+
 ### 0.3.5
 
   - more information is provided when "No route matched" exception is thrown
