@@ -18,7 +18,7 @@
     };
 
     Navstack.prototype = {
-        navigate: function (path) {
+        navigate: function (path, navData) {
             var self = this;
 
             if (this._stack) {
@@ -57,11 +57,12 @@
                     pathSegment: ""
                 }];
             }
-            
+
             navigateIter(path, this._stack, function () {
                 self._renderStack();
             }, function () {
                 self._renderStack();
+                self._assignData(navData);
                 self._didNavigate();
             });
         },
@@ -167,6 +168,18 @@
                 }
                 target.innerHTML = "";
                 target.appendChild(element);
+            }
+        },
+
+        _assignData: function (navData) {
+            var stackWithoutDummyRoot = this._stack.slice(1);
+            var pageGroups = pagesGroupedByTargetForStack(stackWithoutDummyRoot);
+            for (var i = 0, ii = pageGroups.length; i < ii; i++) {
+                var pageGroup = pageGroups[i];
+                var targetPage = pageGroup[0];
+                if (targetPage.onReceiveData) {
+                    targetPage.onReceiveData(navData);
+                }
             }
         },
 
