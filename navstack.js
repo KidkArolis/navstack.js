@@ -177,7 +177,7 @@
             for (var i = 0, ii = pageGroups.length; i < ii; i++) {
                 var pageGroup = pageGroups[i];
                 var targetPage = pageGroup[0];
-                if (targetPage.onReceiveData) {
+                if (targetPage.onReceiveData && navData) {
                     targetPage.onReceiveData(navData);
                 }
             }
