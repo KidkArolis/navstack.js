@@ -23,11 +23,13 @@
 
             if (this._stack) {
                 while (this._stack.length > 2) {
-                    var currentPath = this.currentPath();
                     var desiredPath = path;
-                    var currentPathArr = currentPath.substr(1).split("/");
+                    var currentPath = this.currentPath();
+
                     var desiredPathArr = desiredPath.substr(1).split("/");
-                    if (currentPathArr.length <= desiredPathArr.length) {
+                    var currentPathArr = currentPath.substr(1).split("/");
+
+                    if (desiredPathArr.length >= currentPathArr.length)  {
                         while (desiredPathArr.length > currentPathArr.length) {
                             desiredPathArr.pop();
                         }
@@ -298,7 +300,7 @@
             return done();
         }
 
-        
+
         var match = Navstack.prototype._findMatchingRoute(path, topStackItem.page);
         // TODO possible temporary fix for tests, but not for the problem
         // find a better way to do this. Probably we don't want non leaf states
